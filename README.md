@@ -9,6 +9,7 @@ Current supported commands:
 - `damn`: random curse
 - `abbr`: random de-abbreviation
 - `bard`: random Shakespearean insult
+- `dlpo <term>`: lookup etymology (DLPO)
 
 ## building
 

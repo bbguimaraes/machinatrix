@@ -7,6 +7,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "config.h"
+#include "dlpo.h"
+#include "html.h"
 #include "util.h"
 
 const char *PROG_NAME = 0, *CMD_NAME = 0;
@@ -31,6 +33,7 @@ bool cmd_word(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_abbr(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
@@ -39,6 +42,7 @@ mtrix_cmd COMMANDS[] = {
     {"abbr", cmd_abbr},
     {"damn", cmd_damn},
     {"bard", cmd_bard},
+    {"dlpo", cmd_dlpo},
     {0, 0},
 };
 
@@ -88,6 +92,7 @@ void usage(FILE *f) {
         "Options:\n"
         "    -h, --help             this help\n"
         "    -v, --verbose          verbose output\n"
+        "    -n, --dry-run          don't access external services\n"
         "Commands:\n"
         "    help:                  this help\n"
         "    ping:                  pong\n"
@@ -95,7 +100,8 @@ void usage(FILE *f) {
         "    damn:                  random curse\n"
         "    abbr <acronym> [<dictionary>]:\n"
         "                           random de-abbreviation\n"
-        "    bard:                  random Shakespearean insult\n",
+        "    bard:                  random Shakespearean insult\n"
+        "    dlpo <term>:           lookup etymology (DLPO)\n",
         PROG_NAME);
 }
 
@@ -414,4 +420,44 @@ bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv) {
     srand(time(NULL));
     printf("%s", v[rand() % n]);
     return true;
+}
+
+bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv) {
+    if(!argc) {
+        log_err("missing argument\n");
+        return false;
+    }
+    const char *url_parts[] =
+        {"https://dicionario.priberam.org/", *argv, NULL};
+    char url[MTRIX_MAX_URL];
+    if(!build_url(url, url_parts))
+        return false;
+    if(config->verbose)
+        printf("Looking up term: %s\n", url);
+    if(config->dry)
+        return true;
+    mtrix_buffer buffer = {NULL, 0};
+    if(!request(url, &buffer, config->verbose)) {
+        free(buffer.p);
+        return false;
+    }
+    TidyDoc tidy_doc = tidyCreate();
+    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
+    tidyParseString(tidy_doc, buffer.p);
+    free(buffer.p);
+    const char *id = "resultados";
+    TidyNode res = find_node_by_id(tidyGetRoot(tidy_doc), id, true);
+    bool ret = false;
+    if(!res) {
+        log_err("element '#%s' not found\n", id);
+        goto cleanup;
+    }
+    TidyNode def = dlpo_find_definitions(tidy_doc, res);
+    if(!def)
+        goto cleanup;
+    dlpo_print_definitions(tidy_doc, def);
+    ret = true;
+cleanup:
+    tidyRelease(tidy_doc);
+    return ret;
 }
