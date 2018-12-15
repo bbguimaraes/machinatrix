@@ -10,6 +10,7 @@ Current supported commands:
 - `abbr`: random de-abbreviation
 - `bard`: random Shakespearean insult
 - `dlpo <term>`: lookup etymology (DLPO)
+- `wikt <term>`: lookup etymology (Wiktionary)
 
 ## building
 

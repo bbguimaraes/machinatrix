@@ -5,11 +5,13 @@
 #include <time.h>
 #include <getopt.h>
 #include <sys/wait.h>
+#include <tidybuffio.h>
 #include <unistd.h>
 #include "config.h"
 #include "dlpo.h"
 #include "html.h"
 #include "util.h"
+#include "wikt.h"
 
 const char *PROG_NAME = 0, *CMD_NAME = 0;
 #define MAX_ARGS ((size_t)1)
@@ -34,6 +36,7 @@ bool cmd_abbr(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
@@ -43,6 +46,7 @@ mtrix_cmd COMMANDS[] = {
     {"damn", cmd_damn},
     {"bard", cmd_bard},
     {"dlpo", cmd_dlpo},
+    {"wikt", cmd_wikt},
     {0, 0},
 };
 
@@ -101,7 +105,8 @@ void usage(FILE *f) {
         "    abbr <acronym> [<dictionary>]:\n"
         "                           random de-abbreviation\n"
         "    bard:                  random Shakespearean insult\n"
-        "    dlpo <term>:           lookup etymology (DLPO)\n",
+        "    dlpo <term>:           lookup etymology (DLPO)\n"
+        "    wikt <term>:           lookup etymology (Wiktionary)\n",
         PROG_NAME);
 }
 
@@ -456,6 +461,56 @@ bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv) {
     if(!def)
         goto cleanup;
     dlpo_print_definitions(tidy_doc, def);
+    ret = true;
+cleanup:
+    tidyRelease(tidy_doc);
+    return ret;
+}
+
+bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv) {
+    if(!argc) {
+        log_err("missing argument\n");
+        return false;
+    }
+    const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
+    char url[MTRIX_MAX_URL];
+    if(!build_url(url, url_parts))
+        return false;
+    if(config->verbose)
+        printf("Looking up term: %s\n", url);
+    if(config->dry)
+        return true;
+    mtrix_buffer buffer = {NULL, 0};
+    if(!request(url, &buffer, config->verbose)) {
+        free(buffer.p);
+        return false;
+    }
+    TidyDoc tidy_doc = tidyCreate();
+    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
+    tidyParseString(tidy_doc, buffer.p);
+    free(buffer.p);
+    bool ret = false;
+    wikt_page page;
+    if(!wikt_parse_page(tidy_doc, &page))
+        goto cleanup;
+    for(TidyNode lang = page.contents; lang;) {
+        TidyNode sect = lang;
+        TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
+        const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
+        while(wikt_next_section("h3", "Etymology", 9, &sect)) {
+            if(lang_text) {
+                printf("%s\n", lang_text);
+                lang_text = NULL;
+            }
+            TidyBuffer buf = {0};
+            tidyNodeGetText(tidy_doc, tidyGetNext(sect), &buf);
+            join_lines(buf.bp, buf.bp + buf.size);
+            printf("  ");
+            print_unescaped(buf.bp);
+            tidyBufFree(&buf);
+        }
+        lang = sect;
+    }
     ret = true;
 cleanup:
     tidyRelease(tidy_doc);
