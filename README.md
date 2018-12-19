@@ -5,6 +5,7 @@ A very silly [Matrix](https://matrix.org) bot written in C.
 Current supported commands:
 
 - `ping`: pong
+- `word`: random word
 
 ## building
 

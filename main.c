@@ -1,12 +1,16 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "config.h"
 #include "util.h"
 
 const char *PROG_NAME = 0, *CMD_NAME = 0;
 #define MAX_ARGS ((size_t)1)
+#define DICT_FILE "/usr/share/dict/words"
 
 typedef bool (*mtrix_cmd_f)(const mtrix_config*, int, const char *const*);
 typedef struct {
@@ -22,10 +26,12 @@ bool handle_stdin(const mtrix_config *config);
 void str_to_args(char *str, size_t max_args, int *argc, char **argv);
 bool cmd_help(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_word(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
     {"ping", cmd_ping},
+    {"word", cmd_word},
     {0, 0},
 };
 
@@ -77,7 +83,8 @@ void usage(FILE *f) {
         "    -v, --verbose          verbose output\n"
         "Commands:\n"
         "    help:                  this help\n"
-        "    ping:                  pong\n",
+        "    ping:                  pong\n"
+        "    word:                  random word\n",
         PROG_NAME);
 }
 
@@ -148,4 +155,21 @@ bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv) {
     }
     printf("pong\n");
     return true;
+}
+
+bool cmd_word(const mtrix_config *config, int argc, const char *const *_) {
+    if(argc) {
+        log_err("wrong number of arguments (%i, want 0)\n", argc);
+        return false;
+    }
+    pid_t pid = fork();
+    if(pid == -1) {
+        log_err("fork: %s\n", strerror(errno));
+        return false;
+    }
+    if(!pid) {
+        static const char *argv[] = {"shuf", "-n", "1", DICT_FILE, 0};
+        return exec(argv);
+    }
+    return wait_n(1);
 }
