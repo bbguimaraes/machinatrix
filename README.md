@@ -7,6 +7,7 @@ Current supported commands:
 - `ping`: pong
 - `word`: random word
 - `damn`: random curse
+- `abbr`: random de-abbreviation
 
 ## building
 
