@@ -27,11 +27,13 @@ void str_to_args(char *str, size_t max_args, int *argc, char **argv);
 bool cmd_help(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_word(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
     {"ping", cmd_ping},
     {"word", cmd_word},
+    {"damn", cmd_damn},
     {0, 0},
 };
 
@@ -84,7 +86,8 @@ void usage(FILE *f) {
         "Commands:\n"
         "    help:                  this help\n"
         "    ping:                  pong\n"
-        "    word:                  random word\n",
+        "    word:                  random word\n"
+        "    damn:                  random curse\n",
         PROG_NAME);
 }
 
@@ -169,7 +172,50 @@ bool cmd_word(const mtrix_config *config, int argc, const char *const *_) {
     }
     if(!pid) {
         static const char *argv[] = {"shuf", "-n", "1", DICT_FILE, 0};
-        return exec(argv);
+        return exec(argv, 0, 0);
     }
+    return wait_n(1);
+}
+
+bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv) {
+    if(argc > 1) {
+        log_err("wrong number of arguments (%i, max 1)\n", argc);
+        return false;
+    }
+    int fds[2];
+    if(pipe(fds) == -1) {
+        log_err("pipe: %s\n", strerror(errno));
+        return false;
+    }
+    pid_t pid = fork();
+    if(pid == -1) {
+        log_err("fork: %s\n", strerror(errno));
+        return false;
+    }
+    if(!pid) {
+        close(fds[0]);
+        const char *cargv[] =
+            {"shuf", DICT_FILE, "-n", argc ? argv[0] : "3", 0};
+        return exec(cargv, 0, fds[1]);
+    }
+    close(fds[1]);
+    FILE *child = fdopen(fds[0], "r");
+    if(!child) {
+        log_err("fdopen: %s\n", strerror(errno));
+        return false;
+    }
+    printf("You");
+    char *buffer = 0;
+    for(;;) {
+        size_t len;
+        if((len = getline(&buffer, &len, child)) == -1)
+            break;
+        if(buffer[len - 1] == '\n')
+            buffer[len - 1] = '\0';
+        printf(" %s", buffer);
+    }
+    printf("!\n");
+    if(buffer)
+        free(buffer);
     return wait_n(1);
 }
