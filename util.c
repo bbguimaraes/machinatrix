@@ -35,7 +35,29 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
     return true;
 }
 
-bool exec(const char *const *argv) {
+bool exec(const char *const *argv, int fin, int fout) {
+    if(fin) {
+        for(;;) {
+            if(dup2(fin, STDIN_FILENO) != -1)
+                break;
+            if(errno == EINTR)
+                continue;
+            log_err("dup2: %s\n", strerror(errno));
+            return false;
+        }
+        close(fin);
+    }
+    if(fout) {
+        for(;;) {
+            if(dup2(fout, STDOUT_FILENO) != -1)
+                break;
+            if(errno == EINTR)
+                continue;
+            log_err("dup2: %s\n", strerror(errno));
+            return false;
+        }
+        close(fout);
+    }
     if(execvp(argv[0], (char *const*)argv) != -1)
         return true;
     log_err("execvp: %s\n", strerror(errno));
