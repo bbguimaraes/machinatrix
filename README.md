@@ -8,6 +8,7 @@ Current supported commands:
 - `word`: random word
 - `damn`: random curse
 - `abbr`: random de-abbreviation
+- `bard`: random Shakespearean insult
 
 ## building
 
