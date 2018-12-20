@@ -27,12 +27,14 @@ void str_to_args(char *str, size_t max_args, int *argc, char **argv);
 bool cmd_help(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_word(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_abbr(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
     {"ping", cmd_ping},
     {"word", cmd_word},
+    {"abbr", cmd_abbr},
     {"damn", cmd_damn},
     {0, 0},
 };
@@ -87,7 +89,9 @@ void usage(FILE *f) {
         "    help:                  this help\n"
         "    ping:                  pong\n"
         "    word:                  random word\n"
-        "    damn:                  random curse\n",
+        "    damn:                  random curse\n"
+        "    abbr <acronym> [<dictionary>]:\n"
+        "                           random de-abbreviation\n",
         PROG_NAME);
 }
 
@@ -175,6 +179,61 @@ bool cmd_word(const mtrix_config *config, int argc, const char *const *_) {
         return exec(argv, 0, 0);
     }
     return wait_n(1);
+}
+
+bool cmd_abbr(const mtrix_config *config, int argc, const char *const *argv) {
+    if(argc != 1) {
+        log_err("wrong number of arguments (%i, want 1)\n", argc);
+        return false;
+    }
+    for(const char *c = argv[0]; *c; ++c) {
+        int fds[2][2];
+        if(pipe(fds[0]) == -1) {
+            log_err("pipe: %s\n", strerror(errno));
+            return false;
+        }
+        pid_t pid0 = fork();
+        if(pid0 == -1) {
+            log_err("fork: %s\n", strerror(errno));
+            return false;
+        }
+        if(!pid0) {
+            close(fds[0][0]);
+            const char *cargv[] = {"look", 0, 0};
+            char arg[] = {*c, '\0'};
+            cargv[1] = arg;
+            return exec(cargv, 0, fds[0][1]);
+        }
+        close(fds[0][1]);
+        if(pipe(fds[1]) == -1) {
+            log_err("pipe: %s\n", strerror(errno));
+            return false;
+        }
+        pid_t pid1 = fork();
+        if(!pid1) {
+            close(fds[1][0]);
+            const char *cargv[] = {"shuf", "-n", "1", 0};
+            return exec(cargv, fds[0][0], fds[1][1]);
+        }
+        close(fds[0][0]);
+        close(fds[1][1]);
+        FILE *child = fdopen(fds[1][0], "r");
+        if(!child) {
+            log_err("fdopen: %s\n", strerror(errno));
+            return false;
+        }
+        char *buffer = 0;
+        size_t len;
+        if((len = getline(&buffer, &len, child)) == -1)
+            break;
+        if(buffer[len - 1] == '\n')
+            buffer[len - 1] = '\0';
+        printf("%s%s", c != argv[0] ? " " : "", buffer);
+        if(!wait_n(2))
+            return false;
+    }
+    printf("\n");
+    return true;
 }
 
 bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv) {
