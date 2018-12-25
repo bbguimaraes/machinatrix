@@ -2,6 +2,8 @@
 
 A very silly [Matrix](https://matrix.org) bot written in C.
 
+To use it, create an account, start the `machinatrix_matrix` program, join a
+room, and send commands prefixed with an IRC-style mention of the user name.
 Current supported commands:
 
 - `ping`: pong
@@ -36,3 +38,12 @@ arguments.  If none is provided, they are read from `stdin`.
     pong
     ping
     pong
+
+A second binary, `machinatrix_matrix`, connects to the server, listens for new
+messages, and replies.  It executes the `machinatrix` program to handle the
+commands.
+
+    $ ./machinatrix_matrix \
+        --server matrix.example.com \
+        --user @machinatrix:matrix.example.com \
+        --token 123456
