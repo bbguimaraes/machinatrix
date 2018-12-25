@@ -12,7 +12,11 @@ Current supported commands:
 
 ## building
 
-A C compiler and a UNIX programming environment are required.
+A C compiler and a UNIX programming environment are required, along with the
+following libraries (tested versions in parentheses):
+
+- libcurl (7.55.1)
+- tidy-html5 (5.6.0)
 
 ## running
 
