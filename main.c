@@ -38,6 +38,7 @@ bool cmd_parl(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_tr(const mtrix_config *config, int argc, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
@@ -49,6 +50,7 @@ mtrix_cmd COMMANDS[] = {
     {"bard", cmd_bard},
     {"dlpo", cmd_dlpo},
     {"wikt", cmd_wikt},
+    {"tr", cmd_tr},
     {0, 0},
 };
 
@@ -109,7 +111,8 @@ void usage(FILE *f) {
         "    bard:                  random Shakespearean insult\n"
         "    dlpo <term>:           lookup etymology (DLPO)\n"
         "    wikt <term>:           lookup etymology (Wiktionary)\n"
-        "    parl:                  use unparliamentary language\n",
+        "    parl:                  use unparliamentary language\n"
+        "    tr <term>:             lookup translation (Wiktionary)\n",
         PROG_NAME);
 }
 
@@ -639,6 +642,74 @@ bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv) {
         lang = sect;
     }
     ret = true;
+cleanup:
+    tidyRelease(tidy_doc);
+    return ret;
+}
+
+bool cmd_tr(const mtrix_config *config, int argc, const char *const *argv) {
+    if(argc < 1) {
+        log_err("at least one argumnet (term) is required");
+        return false;
+    }
+    const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
+    char url[MTRIX_MAX_URL];
+    if(!build_url(url, url_parts))
+        return false;
+    if(config->verbose)
+        printf("Looking up term: %s\n", url);
+    if(config->dry)
+        return true;
+    mtrix_buffer buffer = {NULL, 0};
+    if(!request(url, &buffer, config->verbose)) {
+        free(buffer.p);
+        return false;
+    }
+    TidyDoc tidy_doc = tidyCreate();
+    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
+    tidyParseString(tidy_doc, buffer.p);
+    free(buffer.p);
+    bool ret = false;
+    wikt_page page;
+    if(!wikt_parse_page(tidy_doc, &page))
+        goto cleanup;
+    TidyBuffer buf = {0};
+    for(TidyNode lang = page.contents; lang;) {
+        TidyNode sect = lang;
+        TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
+        const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
+        while(wikt_next_subsection("div", "Translations-", 13, &sect)) {
+            if(lang_text) {
+                printf("%s\n", lang_text);
+                lang_text = NULL;
+            }
+            const TidyNode head = wikt_translation_head(sect);
+            if(!head)
+                continue;
+            tidyNodeGetText(tidy_doc, head, &buf);
+            join_lines(buf.bp, buf.bp + buf.size);
+            printf("  %s\n", buf.bp);
+            tidyBufFree(&buf);
+            const TidyNode body = wikt_translation_body(sect);
+            if(!body)
+                continue;
+            for(TidyNode td = tidyGetChild(body); td; td = tidyGetNext(td)) {
+                TidyNode n = td;
+                if(!(n = tidyGetChild(n)))
+                    continue;
+                if(!(n = tidyGetChild(n)))
+                    continue;
+                for(TidyNode li = n; li; li = tidyGetNext(li)) {
+                    tidyNodeGetText(tidy_doc, li, &buf);
+                    join_lines(buf.bp, buf.bp + buf.size);
+                    printf("    ");
+                    print_unescaped(buf.bp);
+                    tidyBufFree(&buf);
+                }
+            }
+        }
+        lang = sect;
+    }
 cleanup:
     tidyRelease(tidy_doc);
     return ret;

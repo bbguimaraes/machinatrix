@@ -30,6 +30,22 @@ TidyNode wikt_find_lang(TidyNode node, const char *name) {
     return NULL;
 }
 
+TidyNode wikt_translation_head(TidyNode n) {
+    return (n = tidyGetChild(n))
+        && (n = tidyGetChild(n))
+        ? n : NULL;
+}
+
+TidyNode wikt_translation_body(TidyNode n) {
+    return (n = tidyGetChild(n))
+        && (n = tidyGetNext(n))
+        && (n = tidyGetChild(n))
+        && (n = find_node_by_name(n, "table"))
+        && (n = tidyGetChild(n))
+        && (n = tidyGetChild(n))
+        ? n : NULL;
+}
+
 static bool wikt_next(
         const char *header, const char *prefix, size_t len, TidyNode *node,
         bool sub) {
