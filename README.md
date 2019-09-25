@@ -12,6 +12,7 @@ Current supported commands:
 - `dlpo <term>`: lookup etymology (DLPO)
 - `wikt <term>`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
+- `tr`: translate word (Wiktionary)
 
 ## building
 
