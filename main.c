@@ -34,6 +34,7 @@ bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_word(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_abbr(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv);
+bool cmd_parl(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv);
@@ -44,6 +45,7 @@ mtrix_cmd COMMANDS[] = {
     {"word", cmd_word},
     {"abbr", cmd_abbr},
     {"damn", cmd_damn},
+    {"parl", cmd_parl},
     {"bard", cmd_bard},
     {"dlpo", cmd_dlpo},
     {"wikt", cmd_wikt},
@@ -106,7 +108,8 @@ void usage(FILE *f) {
         "                           random de-abbreviation\n"
         "    bard:                  random Shakespearean insult\n"
         "    dlpo <term>:           lookup etymology (DLPO)\n"
-        "    wikt <term>:           lookup etymology (Wiktionary)\n",
+        "    wikt <term>:           lookup etymology (Wiktionary)\n"
+        "    parl:                  use unparliamentary language\n",
         PROG_NAME);
 }
 
@@ -292,6 +295,130 @@ bool cmd_damn(const mtrix_config *config, int argc, const char *const *argv) {
     if(buffer)
         free(buffer);
     return wait_n(1);
+}
+
+bool cmd_parl(const mtrix_config *config, int argc, const char *const *argv) {
+    if(argc) {
+        log_err("wrong number of arguments (%i, want 0)\n", argc);
+        return false;
+    }
+    static const char *v[] = {
+        "A terminological inexactitude [citation needed].\n",
+        "Liar.\n-- Australia, 1997\n",
+        "Dumbo.\n-- Australia, 1997\n",
+        "In Belgium there is no such thing as unparliamentary language.\n"
+            "-- Belgium\n",
+        "Parliamentary pugilist.\n-- Canada, 1875\n",
+        "A bag of wind.\n-- Canada, 1878\n",
+        "Inspired by forty-rod whisky.\n-- Canada, 1881\n",
+        "Coming into the world by accident.\n-- Canada, 1886\n",
+        "Blatherskite.\n-- Canada, 1890\n",
+        "The political sewer pipe from Carleton County.\n-- Canada, 1917\n",
+        "Lacking in intelligence.\n-- Canada, 1934\n",
+        "A dim-witted saboteur.\n-- Canada, 1956\n",
+        "Liar.\n-- Canada, 1959\n",
+        "Devoid of honour.\n-- Canada, 1960\n",
+        "Joker in the house.\n-- Canada, 1960\n",
+        "Ignoramus.\n-- Canada, 1961\n",
+        "Scurrilous.\n-- Canada, 1961\n",
+        "To hell with Parliament attitude.\n-- Canada, 1961\n",
+        "Trained seal.\n-- Canada, 1961\n",
+        "Evil genius.\n-- Canada, 1962\n",
+        "Demagogue.\n-- Canada, 1963\n",
+        "Canadian Mussolini.\n-- Canada, 1964\n",
+        "Sick animal.\n-- Canada, 1966\n",
+        "Pompous ass.\n-- Canada, 1967\n",
+        "Crook.\n-- Canada, 1971\n",
+        "Does not have a spine.\n-- Canada, 1971\n",
+        "Fuddle duddle.\n-- Canada, 1971\n",
+        "Pig.\n-- Canada, 1977\n",
+        "Jerk.\n-- Canada, 1980\n",
+        "Sleazebag.\n-- Canada, 1984\n",
+        "Racist.\n-- Canada, 1986\n",
+        "Scuzzball.\n-- Canada, 1988\n",
+        "Weathervane.\n-- Canada, 2007\n",
+        "A piece of shit.\n-- Canada, 2011\n",
+        "Like a fart.\n-- Canada, 2016\n",
+        "臭罌出臭草 (foul grass grows out of a foul ditch).\n"
+            "-- Hong Kong, 1996\n",
+        "Bad man.\n-- India, 2012\n",
+        "Badmashi.\n-- India, 2012\n",
+        "Bag of shit.\n-- India, 2012\n",
+        "Bandicoot.\n-- India, 2012\n",
+        "Communist.\n-- India, 2012\n",
+        "Double-minded.\n-- India, 2012\n",
+        "Goonda.\n-- India, 2012\n",
+        "Rat.\n-- India, 2012\n",
+        "Ringmaster.\n-- India, 2012\n",
+        "Scumbag.\n-- India, 2012\n",
+        "Benny.\n-- Ireland\n",
+        "Pair of bennies.\n-- Ireland\n",
+        "Brat.\n-- Ireland\n",
+        "Buffoon.\n-- Ireland\n",
+        "Chancer.\n-- Ireland\n",
+        "Communist.\n-- Ireland\n",
+        "Corner boy.\n-- Ireland\n",
+        "Coward.\n-- Ireland\n",
+        "Fascist.\n-- Ireland\n",
+        "Gurrier.\n-- Ireland\n",
+        "Guttersnipe.\n-- Ireland\n",
+        "Hypocrite.\n-- Ireland\n",
+        "Rat.\n-- Ireland\n",
+        "Scumbag.\n-- Ireland\n",
+        "Scurrilous speaker.\n-- Ireland\n",
+        "Yahoo.\n-- Ireland\n",
+        "Lying or drunk; has violated the secrets of cabinet, "
+            "or doctored an official report.\n-- Ireland\n",
+        "Handbagging.\n-- Ireland\n",
+        "Fuck you!\n-- Ireland, 2009\n",
+        "Gurriers shouting on a street at each other.\n-- Ireland\n",
+        "Idle vapourings of a mind diseased.\n-- New Zealand, 1946\n",
+        "His brains could revolve inside a peanut shell for a thousand years "
+            "without touching the sides.\n-- New Zealand, 1949\n",
+        "Energy of a tired snail returning home from a funeral.\n"
+            "-- New Zealand, 1963\n",
+        "Commo (meaning communist).\n-- New Zealand, 1969\n",
+        "Scuttles for his political funk hole.\n-- New Zealand, 1974\n",
+        "Highway bandit.\n-- Norway, 2009\n",
+        "Bastard.\n-- United Kingdom\n",
+        "Blackguard.\n-- United Kingdom\n",
+        "Coward.\n-- United Kingdom\n",
+        "Deceptive.\n-- United Kingdom\n",
+        "Dodgy.\n-- United Kingdom\n",
+        "Drunk.\n-- United Kingdom\n",
+        "Falsehoods.\n-- United Kingdom\n",
+        "Git.\n-- United Kingdom\n",
+        "Guttersnipe.\n-- United Kingdom\n",
+        "Hooligan.\n-- United Kingdom\n",
+        "Hypocrite.\n-- United Kingdom\n",
+        "Idiot.\n-- United Kingdom\n",
+        "Ignoramus.\n-- United Kingdom\n",
+        "Liar.\n-- United Kingdom\n",
+        "Pipsqueak.\n-- United Kingdom\n",
+        "Rat.\n-- United Kingdom\n",
+        "Slimy.\n-- United Kingdom\n",
+        "Sod.\n-- United Kingdom\n",
+        "Squirt.\n-- United Kingdom\n",
+        "Stoolpigeon.\n-- United Kingdom\n",
+        "Swine.\n-- United Kingdom\n",
+        "Tart.\n-- United Kingdom\n",
+        "Traitor.\n-- United Kingdom\n",
+        "Wart.\n-- United Kingdom\n",
+        "Crooked deals.\n-- United Kingdom\n",
+        "Use of banned substances.\n-- United Kingdom\n",
+        "Been bought.\n-- United Kingdom\n",
+        "Racist.\n-- United Kingdom\n",
+        "Has made a career out of lying.\n-- United Kingdom\n",
+        "Lying.\n-- Wales\n",
+        "Mrs. Windsor.\n-- Wales\n",
+        "Economical with the truth.\n",
+        "Tired and emotional.\n-- United Kingdom\n",
+        "Incapable.\n-- United Kingdom\n",
+    };
+    static const size_t n = sizeof(v) / sizeof(*v);
+    srand(time(NULL));
+    printf("%s", v[rand() % n]);
+    return true;
 }
 
 bool cmd_bard(const mtrix_config *config, int argc, const char *const *argv) {
