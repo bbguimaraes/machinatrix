@@ -21,6 +21,7 @@ following libraries (tested versions in parentheses):
 
 - libcurl (7.55.1)
 - tidy-html5 (5.6.0)
+- cjson (1.7.10)
 
 ## running
 
