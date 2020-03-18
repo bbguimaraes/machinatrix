@@ -1,7 +1,7 @@
 CFLAGS += -g -Wall -pedantic
 CFLAGS += -isystem deps/include/
 LDFLAGS += -L deps/lib/
-LDLIBS += -lcurl -ltidy
+LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 machinatrix: config.o dlpo.o html.o main.o util.o wikt.o
 	$(LINK.c) $^ $(LDLIBS) -o $@
