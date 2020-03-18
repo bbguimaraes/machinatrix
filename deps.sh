@@ -6,6 +6,11 @@ TIDY_HASH=08a63bba3d9e7618d1570b4ecd6a7daa83c8e18a41c82455b6308bc11fe34958
 TIDY_DIR=tidy-html5-$TIDY_VERSION
 TIDY_PKG=$TIDY_DIR.tar.gz
 TIDY_URL=https://github.com/htacg/tidy-html5/archive/$TIDY_VERSION.tar.gz
+CJSON_VERSION=1.7.10
+CJSON_HASH=cc544fdd065f3dd19113f1d5ba5f61d696e0f810f291f4b585d1dec361b0188e
+CJSON_DIR=cJSON-$CJSON_VERSION
+CJSON_PKG=$CJSON_DIR.tar.gz
+CJSON_URL=https://github.com/DaveGamble/cJSON/archive/v$CJSON_VERSION.tar.gz
 
 main() {
     [ -e deps ] || mkdir deps
@@ -13,6 +18,7 @@ main() {
     [ -e include ] || mkdir include
     [ -e lib ] || mkdir lib
     tidy
+    cjson
 }
 
 tidy() {
@@ -20,6 +26,14 @@ tidy() {
     (cd "$TIDY_DIR" && cmake CMakeLists.txt && make -j "$(nproc)")
     link include ../ "$TIDY_DIR/include"/*
     link lib ../ "$TIDY_DIR"/libtidy*.so*
+}
+
+cjson() {
+    download "$CJSON_DIR" "$CJSON_PKG" "$CJSON_URL" "$CJSON_HASH"
+    (cd "$CJSON_DIR" && make -j "$(nproc)")
+    [ -e include/cjson ] || mkdir include/cjson
+    link include/cjson ../../ "$CJSON_DIR"/*.h
+    link lib ../ "$CJSON_DIR"/libcjson*.so*
 }
 
 download() {
