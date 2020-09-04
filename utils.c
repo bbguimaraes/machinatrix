@@ -9,15 +9,9 @@
 #include <tidybuffio.h>
 #include <unistd.h>
 #include <curl/curl.h>
-#include "util.h"
+#include "utils.h"
 
 extern const char *PROG_NAME, *CMD_NAME;
-
-void join_lines(unsigned char *b, unsigned char *e) {
-    for(; b != e; ++b)
-        if(*b == '\n')
-            *b = ' ';
-}
 
 void log_err(const char *fmt, ...) {
     if(PROG_NAME)
@@ -98,6 +92,12 @@ bool wait_n(size_t n) {
     return ret;
 }
 
+void join_lines(unsigned char *b, unsigned char *e) {
+    for(; b != e; ++b)
+        if(*b == '\n')
+            *b = ' ';
+}
+
 size_t curl_write_cb(char *in, size_t size, size_t nmemb, TidyBuffer *out) {
     size_t r = size * nmemb;
     tidyBufAppend(out, in, r);
@@ -127,12 +127,12 @@ size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b) {
 }
 
 bool build_url(char *url, const char **v) {
-    size_t m = MTRIX_MAX_URL;
+    size_t m = MTRIX_MAX_URL_LEN;
     char *p = url;
     for(; *v; ++v) {
         int l = snprintf(p, m, "%s", *v);
         if(l >= m) {
-            log_err("url too long (%lu >= %lu): %s\n", l, m, url);
+            log_err("url too long (%zu >= %zu): %s\n", l, m, url);
             return false;
         }
         m -= l;
