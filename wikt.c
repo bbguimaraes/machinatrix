@@ -2,7 +2,7 @@
 
 #include <tidybuffio.h>
 #include "html.h"
-#include "util.h"
+#include "utils.h"
 
 static const char *TOC_ID = "toc";
 

@@ -3,7 +3,7 @@
 #include <tidybuffio.h>
 
 #include "html.h"
-#include "util.h"
+#include "utils.h"
 
 TidyNode dlpo_find_definitions(TidyDoc doc, TidyNode node) {
     if(!(node = tidyGetChild(node))) {

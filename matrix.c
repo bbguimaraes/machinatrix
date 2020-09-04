@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <cjson/cJSON.h>
 #include "config.h"
-#include "util.h"
+#include "utils.h"
 
 #define SYNC_INTERVAL_S 30
 #define SYNC_INTERVAL_MS_STR "30000"
@@ -132,7 +132,7 @@ bool init_batch(const mtrix_config *config, char *batch) {
             "?filter={\"room\":{\"timeline\":{\"limit\":1}}}"
             "&access_token=",
         config->token, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     if(!build_url(url, url_parts))
         return false;
     mtrix_buffer buffer = {NULL, 0};
@@ -181,7 +181,7 @@ bool loop(const mtrix_config *config, char *batch) {
         config->server, "/_matrix/client/r0/sync?since=", batch,
         "&timeout=" SYNC_INTERVAL_MS_STR
         "&access_token=", config->token, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     mtrix_buffer buffer = {NULL, 0};
     cJSON *root = NULL;
     for(;;) {
@@ -335,7 +335,7 @@ bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
         "/_matrix/client/r0/rooms/", room,
         "/send/m.room.message?access_token=",
         config->token, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     if(!build_url(url, url_parts))
         return false;
     cJSON *msg_json = cJSON_CreateObject();
