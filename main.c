@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -10,10 +9,10 @@
 #include "config.h"
 #include "dlpo.h"
 #include "html.h"
-#include "util.h"
+#include "utils.h"
 #include "wikt.h"
 
-const char *PROG_NAME = 0, *CMD_NAME = 0;
+const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 #define MAX_ARGS ((size_t)1)
 #define DICT_FILE "/usr/share/dict/words"
 
@@ -560,7 +559,7 @@ bool cmd_dlpo(const mtrix_config *config, int argc, const char *const *argv) {
     }
     const char *url_parts[] =
         {"https://dicionario.priberam.org/", *argv, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     if(!build_url(url, url_parts))
         return false;
     if(config->verbose)
@@ -599,7 +598,7 @@ bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv) {
         return false;
     }
     const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     if(!build_url(url, url_parts))
         return false;
     if(config->verbose)
@@ -632,7 +631,8 @@ bool cmd_wikt(const mtrix_config *config, int argc, const char *const *argv) {
             tidyNodeGetText(tidy_doc, tidyGetNext(sect), &buf);
             join_lines(buf.bp, buf.bp + buf.size);
             printf("  ");
-            print_unescaped(buf.bp);
+            print_unescaped(stdout, buf.bp);
+            printf("\n");
             tidyBufFree(&buf);
         }
         lang = sect;
@@ -649,7 +649,7 @@ bool cmd_tr(const mtrix_config *config, int argc, const char *const *argv) {
         return false;
     }
     const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
-    char url[MTRIX_MAX_URL];
+    char url[MTRIX_MAX_URL_LEN];
     if(!build_url(url, url_parts))
         return false;
     if(config->verbose)
@@ -699,7 +699,8 @@ bool cmd_tr(const mtrix_config *config, int argc, const char *const *argv) {
                     tidyNodeGetText(tidy_doc, li, &buf);
                     join_lines(buf.bp, buf.bp + buf.size);
                     printf("    ");
-                    print_unescaped(buf.bp);
+                    print_unescaped(stdout, buf.bp);
+                    printf("\n");
                     tidyBufFree(&buf);
                 }
             }
