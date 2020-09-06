@@ -1,10 +1,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define MAX_SERVER (size_t)256
-#define MAX_USER (size_t)256
-#define MAX_TOKEN (size_t)512
-#define MAX_BATCH (size_t)512
+#define MAX_SERVER ((size_t)256U)
+#define MAX_USER ((size_t)256U)
+#define MAX_TOKEN ((size_t)512U)
+#define MAX_BATCH ((size_t)512U)
 
 typedef struct {
     bool help, verbose, dry;

@@ -8,9 +8,9 @@
 #include "config.h"
 #include "utils.h"
 
-#define SYNC_INTERVAL_S 30
+#define SYNC_INTERVAL_S ((size_t)30U)
 #define SYNC_INTERVAL_MS_STR "30000"
-#define MIN_SYNC_INTERVAL_S 5
+#define MIN_SYNC_INTERVAL_S ((size_t)5U)
 const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 
 int main(int argc, char *const *argv);
