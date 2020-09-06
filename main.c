@@ -13,7 +13,7 @@
 #include "wikt.h"
 
 const char *PROG_NAME = NULL, *CMD_NAME = NULL;
-#define MAX_ARGS ((size_t)1)
+#define MAX_ARGS ((size_t)1U)
 #define DICT_FILE "/usr/share/dict/words"
 
 typedef bool (*mtrix_cmd_f)(const mtrix_config*, int, const char *const*);

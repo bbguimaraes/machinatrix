@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define MTRIX_MAX_URL_LEN 1024
+#define MTRIX_MAX_URL_LEN ((size_t)1024U)
 
 extern const char *PROG_NAME;
 extern const char *CMD_NAME;
