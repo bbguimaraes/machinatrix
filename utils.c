@@ -35,14 +35,14 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
         log_err("empty %s specified\n", name);
         return false;
     }
-    size_t i = 0;
-    while(i < max && *src)
-        dst[i++] = *src++;
-    if(i >= max) {
-        log_err("%s too long (>= %lu)\n", name, max);
-        return false;
+    for(const char *const end = dst + max;;) {
+        if(dst == end) {
+            log_err("%s too long (>= %lu)\n", name, max);
+            return false;
+        }
+        if(!(*dst++ = *src++))
+            break;
     }
-    dst[i] = '\0';
     return true;
 }
 
