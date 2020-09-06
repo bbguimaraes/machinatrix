@@ -11,16 +11,22 @@
 #include <curl/curl.h>
 #include "utils.h"
 
-extern const char *PROG_NAME, *CMD_NAME;
+static FILE *LOG_OUT = NULL;
+
+FILE *log_set(FILE *f) {
+    FILE *ret = LOG_OUT;
+    LOG_OUT = f;
+    return ret;
+}
 
 void log_err(const char *fmt, ...) {
     if(PROG_NAME)
-        fprintf(stderr, "%s: ", PROG_NAME);
+        fprintf(LOG_OUT, "%s: ", PROG_NAME);
     if(CMD_NAME)
-        fprintf(stderr, "%s: ", CMD_NAME);
+        fprintf(LOG_OUT, "%s: ", CMD_NAME);
     va_list argp;
     va_start(argp, fmt);
-    vfprintf(stderr, fmt, argp);
+    vfprintf(LOG_OUT, fmt, argp);
     va_end(argp);
 }
 

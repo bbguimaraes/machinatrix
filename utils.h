@@ -7,6 +7,12 @@ extern const char *PROG_NAME;
 extern const char *CMD_NAME;
 
 /**
+ * log_set sets the output file stream used by log functions.
+ * The previous value is returned.
+ */
+FILE *log_set(FILE *f);
+
+/**
  * log_err writes the printf-style message to the error output.
  * If non-null, PROG_NAME and CMD_NAME are prepended.
  */
