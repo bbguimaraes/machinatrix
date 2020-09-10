@@ -13,7 +13,6 @@ const char *PROG_NAME = NULL;
 const char *CMD_NAME = NULL;
 
 static bool test_log(void) {
-    bool ret = false;
     FILE *const tmp = tmpfile();
     log_set(tmp);
     log_err("log\n");
@@ -21,22 +20,12 @@ static bool test_log(void) {
     log_err("with program name\n");
     CMD_NAME = "cmd_name";
     log_err("with command name\n");
-    size_t n = ftell(tmp);
-    assert(n > 0);
-    assert(fseek(tmp, 0, SEEK_SET) >= 0);
-    char *text = malloc(n);
-    fread(text, 1, n, tmp);
-    assert(!ferror(tmp));
-    const char expected[] =
-        "log\n"
-        "prog_name: with program name\n"
-        "prog_name: cmd_name: with command name\n";
-    if(!(ret = strncmp(text, expected, sizeof(expected) - 1) == 0))
-        fprintf(stderr, "unexpected output: %.*s", (int)n, text);
     PROG_NAME = NULL;
     CMD_NAME = NULL;
-    free(text);
-    return ret;
+    return CHECK_LOG(
+        "log\n"
+        "prog_name: with program name\n"
+        "prog_name: cmd_name: with command name\n");
 }
 
 static bool test_copy_arg_empty() {
@@ -49,9 +38,9 @@ static bool test_copy_arg_empty() {
 static bool test_copy_arg_too_long() {
     log_set(tmpfile());
     const char *arg = "01234567";
-    char out[8];
+    char out[8] = {0};
     return ASSERT(!copy_arg("arg_name", out, arg, 8))
-        && ASSERT_STR_EQ(out, arg)
+        && ASSERT_STR_EQ_N(out, arg, sizeof(out))
         && CHECK_LOG("arg_name too long (>= 8)\n");
 }
 
@@ -108,13 +97,8 @@ static bool test_exec_output() {
     const size_t n_read = sizeof(expected) - 1;
     size_t n = read(fds.parent_read, output, n_read);
     ret = ASSERT_EQ(n, n_read) && ret;
-    if(strncmp(output, expected, sizeof(expected)) != 0) {
-        fprintf(
-            stderr, "unexpected output: %.*s\n",
-            (int)n_read, output);
-        ret = false;
-    } else
-        ret = ASSERT_EQ(read(fds.parent_read, output, n_read), 0) && ret;
+    ret = ASSERT_STR_EQ_N(output, expected, sizeof(expected) - 1) && ret;
+    ret = ASSERT_EQ(read(fds.parent_read, output, n_read), 0) && ret;
     assert(close(fds.parent_read) == 0);
     return ret;
 }
@@ -213,13 +197,7 @@ static bool test_build_url() {
     const char *parts[] = {input0, input1, NULL};
     bool ret = ASSERT(build_url(buf, parts));
     const char expected[] = "input0input1";
-    if(strncmp(buf, expected, sizeof(expected)) != 0) {
-        fprintf(
-            stderr, "unexpected output: %.*s\n",
-            (int)sizeof(expected), buf);
-        ret = false;
-    }
-    return ret;
+    return ASSERT_STR_EQ_N(buf, expected, sizeof(expected)) && ret;
 }
 
 int main() {
