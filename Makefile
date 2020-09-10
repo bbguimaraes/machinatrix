@@ -5,7 +5,11 @@ LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 TESTS += tests/html tests/utils
 
-.PHONY: all
+sources = \
+	config.c dlpo.c html.c main.c matrix.c utils.c wikt.c \
+	tests/html.c tests/utils.c
+
+.PHONY: all check clean tidy
 all: machinatrix machinatrix_matrix
 machinatrix: config.o dlpo.o html.o main.o utils.o wikt.o
 machinatrix_matrix: config.o matrix.o utils.o
@@ -15,6 +19,11 @@ machinatrix machinatrix_matrix:
 tests/html: html.o utils.o tests/html.o
 tests/utils: utils.o tests/utils.o
 
+tidy:
+	echo $(sources) \
+		| xargs -n 1 \
+		| xargs -I {} --max-procs $$(nproc) \
+			clang-tidy {} -- $(CPPFLAGS) $(CFLAGS)
 test_flags = -fsanitize=address,undefined -fstack-protector
 $(TESTS): CFLAGS := $(CFLAGS) $(test_flags)
 $(TESTS): LDFLAGS := $(LDFLAGS) $(test_flags)
