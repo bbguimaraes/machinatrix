@@ -1,4 +1,5 @@
 #include <stdbool.h>
+
 #include <tidy.h>
 
 TidyNode dlpo_find_definitions(TidyDoc doc, TidyNode node);

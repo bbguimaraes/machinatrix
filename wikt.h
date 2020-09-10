@@ -1,4 +1,5 @@
 #include <stdbool.h>
+
 #include <tidy.h>
 
 typedef struct {
