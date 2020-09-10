@@ -1,16 +1,23 @@
 #include "utils.h"
 
 #define RUN(x) run(#x, (x))
-#define ASSERT(x) assert_fail((x), __FILE__, __LINE__, #x)
-#define ASSERT_EQ(x, y) \
-    assert_eq_fail((x) == (y), __FILE__, __LINE__, #x, #y)
-#define ASSERT_NE(x, y) \
-    assert_eq_fail((x) != (y), __FILE__, __LINE__, #x, #y)
-#define ASSERT_STR_EQ(x, y) \
-    assert_eq_fail(strcmp(x, y) == 0, __FILE__, __LINE__, x, y)
-#define CHECK_LOG(x) check_log(__FILE__, __LINE__, (x))
+#define LOC() \
+    (struct loc) { __FILE__, __func__, __LINE__ }
+#define FAIL(n, s0, s1) (print_loc(LOC()), fail(n, s0, s1))
+#define ASSERT(x) ((x) || FAIL(-1, #x, NULL))
+#define ASSERT_EQ(x, y) ((x) == (y) || FAIL(-1, #x " == " #y, NULL))
+#define ASSERT_NE(x, y) ((x) != (y) || FAIL(-1, #x " != " #y, NULL))
+#define ASSERT_STR_EQ(x, y) ((strcmp((x), (y)) == 0) || FAIL(-1, (x), (y)))
+#define ASSERT_STR_EQ_N(x, y, n) \
+    ((strncmp((x), (y), (n)) == 0) || FAIL((n), (x), (y)))
+#define CHECK_LOG(x) check_log(LOC(), (x))
 
-bool run(const char *name, bool (*f)()) {
+struct loc {
+    const char *file, *func;
+    int line;
+};
+
+static inline bool run(const char *name, bool (*f)()) {
     assert(printf("%s: ", name) > 0);
     assert(fflush(stdout) != EOF);
     const bool ret = f();
@@ -18,33 +25,26 @@ bool run(const char *name, bool (*f)()) {
     return ret;
 }
 
-bool assert_fail(bool cond, const char *file, int line, const char *exp) {
-    if(!cond)
-        fprintf(stderr, "%s:%d: assertion failed: %s\n", file, line, exp);
-    return cond;
+static inline void print_loc(struct loc loc) {
+    fprintf(stderr, "%s:%d: %s: ", loc.file, loc.line, loc.func);
 }
 
-bool assert_eq_fail(
-        bool cond, const char *file, int line,
-        const char *exp0, const char *exp1) {
-    if(!cond)
-        fprintf(
-            stderr, "%s:%d: assertion failed: %s == %s\n",
-            file, line, exp0, exp1);
-    return cond;
+static inline bool fail(int n, const char *s0, const char *s1) {
+    if(!s1) {
+        if(n == -1)
+            fprintf(stderr, "assertion failed: %s\n", s0);
+        else
+            fprintf(stderr, "assertion failed: %.*s\n", n, s0);
+    } else {
+        if(n == -1)
+            fprintf(stderr, "assertion failed: %s == %s\n", s0, s1);
+        else
+            fprintf(stderr, "assertion failed: %.*s == %.*s\n", n, s0, n, s1);
+    }
+    return false;
 }
 
-bool assert_ne_fail(
-        bool cond, const char *file, int line,
-        const char *exp0, const char *exp1) {
-    if(!cond)
-        fprintf(
-            stderr, "%s:%d: assertion failed: %s != %s\n",
-            file, line, exp0, exp1);
-    return cond;
-}
-
-bool check_log(const char *file, int line, const char *expected) {
+static inline bool check_log(struct loc loc, const char *s) {
     FILE *f = log_set(NULL);
     log_set(f);
     assert(fflush(f) != EOF);
@@ -54,9 +54,11 @@ bool check_log(const char *file, int line, const char *expected) {
     char *text = malloc(n);
     fread(text, 1, n, f);
     assert(!ferror(f));
-    const bool ret = strncmp(text, expected, strlen(expected) - 1) == 0;
-    if(!ret)
+    const bool ret = strncmp(text, s, strlen(s) - 1) == 0;
+    if(!ret) {
+        print_loc(loc);
         fprintf(stderr, "unexpected log output: %.*s", (int)n, text);
+    }
     free(text);
     return ret;
 }

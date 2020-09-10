@@ -106,14 +106,9 @@ static bool test_find_attr() {
 
 static bool test_trim_tag() {
     const char buf[] = "<p>text</p>";
-    const char *b = buf, *e = buf + sizeof(buf);
+    const char *b = buf, *e = buf + sizeof(buf) - 1;
     trim_tag((const unsigned char**)&b, (const unsigned char**)&e);
-    const char expected[] = "text";
-    if(strncmp(b, expected, e - b) != 0) {
-        fprintf(stderr, "unexpected output: %s\n", buf);
-        return false;
-    }
-    return true;
+    return ASSERT_STR_EQ_N(b, "text", e - b);
 }
 
 static bool test_print_unescaped() {
