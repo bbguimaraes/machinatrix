@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include <getopt.h>
 #include <sys/wait.h>
 #include <tidybuffio.h>
 #include <unistd.h>
+
 #include "config.h"
 #include "dlpo.h"
 #include "html.h"

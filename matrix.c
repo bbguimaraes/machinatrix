@@ -1,10 +1,12 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <getopt.h>
-#include <errno.h>
-#include <unistd.h>
+
 #include <cjson/cJSON.h>
+#include <getopt.h>
+#include <unistd.h>
+
 #include "config.h"
 #include "utils.h"
 
