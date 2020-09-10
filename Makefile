@@ -15,6 +15,9 @@ machinatrix machinatrix_matrix:
 tests/html: html.o utils.o tests/html.o
 tests/utils: utils.o tests/utils.o
 
+test_flags = -fsanitize=address,undefined -fstack-protector
+$(TESTS): CFLAGS := $(CFLAGS) $(test_flags)
+$(TESTS): LDFLAGS := $(LDFLAGS) $(test_flags)
 check: $(TESTS)
 	for x in $(TESTS); do { echo "$$x" && ./"$$x"; } || exit; done
 clean:
