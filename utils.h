@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define MTRIX_MAX_URL_LEN ((size_t)1024U)
 

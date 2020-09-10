@@ -1,14 +1,15 @@
-#include <curl/curl.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <curl/curl.h>
 #include <sys/wait.h>
 #include <tidy.h>
 #include <tidybuffio.h>
 #include <unistd.h>
-#include <curl/curl.h>
+
 #include "utils.h"
 
 static FILE *LOG_OUT = NULL;
