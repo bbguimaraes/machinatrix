@@ -5,11 +5,13 @@ LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 TESTS += tests/html tests/utils
 
+headers = \
+	config.h dlpo.h html.h utils.h wikt.h tests/common.h
 sources = \
 	config.c dlpo.c html.c main.c matrix.c utils.c wikt.c \
 	tests/html.c tests/utils.c
 
-.PHONY: all check clean tidy
+.PHONY: all check clean format tidy
 all: machinatrix machinatrix_matrix
 machinatrix: config.o dlpo.o html.o main.o utils.o wikt.o
 machinatrix_matrix: config.o matrix.o utils.o
@@ -19,6 +21,8 @@ machinatrix machinatrix_matrix:
 tests/html: html.o utils.o tests/html.o
 tests/utils: utils.o tests/utils.o
 
+format:
+	for x in $(headers) $(sources); do clang-format -i "$$x"; done
 tidy:
 	echo $(sources) \
 		| xargs -n 1 \
