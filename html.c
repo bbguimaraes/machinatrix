@@ -46,10 +46,28 @@ TidyAttr find_attr(TidyNode node, const char *name) {
     return ret;
 }
 
-void trim_tag(const unsigned char **b, const unsigned char **e) {
-    for(; *b && **b != '>'; ++*b);
-    ++*b;
-    for(; *e > *b && **e != '<'; --*e);
+static void *memrchr(const void *p, int c, size_t n) {
+    const unsigned char *b = p, *e = b + n;
+    while(--e >= b)
+        if(*e == c)
+            return (void *)e;
+    return NULL;
+}
+
+void trim_tag(const unsigned char **pb, const unsigned char **pe) {
+    const unsigned char *b = *pb, *e = *pe;
+    if(*b == '<') {
+        const unsigned char *n = memchr(b, '>', e - b);
+        if(n)
+            b = n + 1;
+    }
+    if(*(e - 1) == '>') {
+        const unsigned char *n = memrchr(b, '<', e - b - 1);
+        if(n)
+            e = n;
+    }
+    *pb = b;
+    *pe = e;
 }
 
 void print_unescaped(FILE *f, const unsigned char *s) {

@@ -105,10 +105,35 @@ static bool test_find_attr() {
 }
 
 static bool test_trim_tag() {
-    const char buf[] = "<p>text</p>";
-    const char *b = buf, *e = buf + sizeof(buf) - 1;
-    trim_tag((const unsigned char**)&b, (const unsigned char**)&e);
-    return ASSERT_STR_EQ_N(b, "text", e - b);
+    // clang-format off
+#define CASE(x, y) {sizeof(x) - 1, sizeof(y) - 1, x, y}
+    const struct {
+        size_t in_len, out_len;
+        const char *in, *out;
+    } t[] = {
+        CASE("text", "text"),
+        CASE("<text", "<text"),
+        CASE(">text", ">text"),
+        CASE("<>text", "text"),
+        CASE("<p>text", "text"),
+        CASE("<p>text<", "text<"),
+        CASE("<p>text</p", "text</p"),
+        CASE("<p>text</p>", "text")};
+#undef CASE
+    // clang-format on
+    bool ret = true;
+    for(size_t i = 0, n = sizeof(t) / sizeof(*t); i < n; ++i) {
+        assert(printf("\n  \"%s\" ", t[i].in) > 0);
+        assert(fflush(stdout) == 0);
+        const char *e = t[i].in + t[i].in_len;
+        trim_tag((const unsigned char **)&t[i].in, (const unsigned char **)&e);
+        const size_t n = e - t[i].in;
+        const bool iret = ASSERT_STR_EQ_N(t[i].in, t[i].out, n);
+        if(!iret)
+            printf("fail ");
+        ret &= iret;
+    }
+    return ret;
 }
 
 static bool test_print_unescaped() {
