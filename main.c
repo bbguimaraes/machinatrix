@@ -135,8 +135,9 @@ bool handle_stdin(const mtrix_config *config) {
         size_t len;
         if((len = getline(&buffer, &len, stdin)) == -1)
             break;
-        int argc; char *argv[MAX_ARGS];
-        str_to_args(buffer, MAX_ARGS, &argc, argv);
+        int argc;
+        char *argv[MAX_ARGS + 1];
+        str_to_args(buffer, MAX_ARGS + 1, &argc, argv);
         if(!argc)
             continue;
         mtrix_cmd *cmd = COMMANDS;
@@ -712,6 +713,7 @@ bool cmd_tr(const mtrix_config *config, int argc, const char *const *argv) {
         }
         lang = sect;
     }
+    ret = true;
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
