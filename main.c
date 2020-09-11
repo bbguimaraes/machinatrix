@@ -26,7 +26,7 @@ int main(int argc, char *const *argv);
 bool parse_args(int *argc, char *const **argv, mtrix_config *config);
 void usage(FILE *f);
 bool handle_cmd(const mtrix_config *config, int argc, const char *const *argv);
-bool handle_stdin(const mtrix_config *config);
+bool handle_file(const mtrix_config *config, FILE *f);
 void str_to_args(char *str, size_t max_args, int *argc, char **argv);
 bool cmd_help(const mtrix_config *config, int argc, const char *const *argv);
 bool cmd_ping(const mtrix_config *config, int argc, const char *const *argv);
@@ -66,7 +66,7 @@ int main(int argc, char *const *argv) {
     }
     return argc
         ? !handle_cmd(&config, argc, (const char * const*)argv)
-        : !handle_stdin(&config);
+        : !handle_file(&config, stdin);
 }
 
 bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
@@ -129,11 +129,12 @@ bool handle_cmd(const mtrix_config *config, int argc, const char *const *argv) {
     return false;
 }
 
-bool handle_stdin(const mtrix_config *config) {
-    bool ret = true; char *buffer = 0;
+bool handle_file(const mtrix_config *config, FILE *f) {
+    bool ret = true;
+    char *buffer = NULL;
     for(;;) {
         size_t len;
-        if((len = getline(&buffer, &len, stdin)) == -1)
+        if((len = getline(&buffer, &len, f)) == -1)
             break;
         int argc;
         char *argv[MAX_ARGS + 1];
