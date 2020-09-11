@@ -164,11 +164,13 @@ bool handle_file(const mtrix_config *config, FILE *f) {
 
 void str_to_args(char *str, size_t max_args, int *argc, char **argv) {
     const char *d = " \n";
-    *argc = 0;
-    char *saveptr, *arg = strtok_r(str, d, &saveptr);
-    if(arg)
-        do argv[(*argc)++] = arg;
-        while(*argc < max_args && (arg = strtok_r(0, d, &saveptr)));
+    size_t n = 0;
+    char *saveptr = NULL, *arg = strtok_r(str, d, &saveptr);
+    while(n < max_args && arg) {
+        argv[n++] = arg;
+        arg = strtok_r(NULL, d, &saveptr);
+    }
+    *argc = n;
 }
 
 bool cmd_help(const mtrix_config *config, int argc, const char *const *argv) {
