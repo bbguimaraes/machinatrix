@@ -200,6 +200,7 @@ static bool test_build_url_too_long() {
     input[MTRIX_MAX_URL_LEN] = 0;
     const char *parts[] = {input, input, NULL};
     bool ret = !build_url(buf, parts);
+    free(input);
     free(buf);
     return CHECK_LOG("url too long (1024 >= 1024): \n")
         && ret;
