@@ -17,6 +17,8 @@
 const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 #define MAX_ARGS ((size_t)1U)
 #define DICT_FILE "/usr/share/dict/words"
+#define DLPO_BASE "https://dicionario.priberam.org"
+#define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
 
 typedef bool mtrix_cmd_f(const mtrix_config *, const char *const *);
 typedef struct {
@@ -557,10 +559,8 @@ bool cmd_dlpo(const mtrix_config *config, const char *const *argv) {
         log_err("command requires an argument\n");
         return false;
     }
-    const char *url_parts[] =
-        {"https://dicionario.priberam.org/", *argv, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    if(!build_url(url, url_parts))
+    if(!BUILD_URL(url, DLPO_BASE "/", *argv))
         return false;
     if(config->verbose)
         printf("Looking up term: %s\n", url);
@@ -597,9 +597,8 @@ bool cmd_wikt(const mtrix_config *config, const char *const *argv) {
         log_err("command requires an argument\n");
         return false;
     }
-    const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    if(!build_url(url, url_parts))
+    if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
     if(config->verbose)
         printf("Looking up term: %s\n", url);
@@ -648,9 +647,8 @@ bool cmd_tr(const mtrix_config *config, const char *const *argv) {
         log_err("command requires an argument");
         return false;
     }
-    const char *url_parts[] = {"https://en.wiktionary.org/wiki/", *argv, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    if(!build_url(url, url_parts))
+    if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
     if(config->verbose)
         printf("Looking up term: %s\n", url);
