@@ -52,6 +52,11 @@ size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b);
 bool build_url(char *url, const char **v);
 
 bool request(const char *url, mtrix_buffer *b, bool verbose);
-bool post(
-    const char *url, size_t n, const char *data,
-    mtrix_buffer *b, bool verbose);
+
+typedef struct {
+    const char *url;
+    size_t data_len;
+    const char *data;
+} post_request;
+
+bool post(post_request r, bool verbose, mtrix_buffer *b);
