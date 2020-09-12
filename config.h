@@ -8,8 +8,7 @@
 
 typedef struct {
     bool help, verbose, dry;
-    char
-        server[MAX_SERVER], user[MAX_USER], token[MAX_TOKEN], batch[MAX_BATCH];
+    char server[MAX_SERVER], user[MAX_USER], token[MAX_TOKEN], batch[MAX_BATCH];
 } mtrix_config;
 
 void init_config(mtrix_config *config);

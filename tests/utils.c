@@ -29,6 +29,33 @@ static bool test_log(void) {
         "prog_name: cmd_name: with command name\n");
 }
 
+static bool test_is_prefix() {
+    // clang-format off
+    const struct {
+        const char *prefix, *s;
+        bool is_prefix;
+    } t[] = {
+        {"", "000", true},
+        {"000", "", false},
+        {"000", "000", true},
+        {"000", "00011", true},
+        {"000", "00011", true},
+        {"000", "0", false},
+        {"001", "000", false},
+        {"111", "000", false}};
+    // clang-format on
+    bool ret = true;
+    for(size_t i = 0, n = sizeof(t) / sizeof(*t); i < n; ++i) {
+        assert(printf("\n  \"%s\" \"%s\" ", t[i].prefix, t[i].s) > 0);
+        assert(fflush(stdout) == 0);
+        const bool iret = t[i].is_prefix == !!(is_prefix(t[i].prefix, t[i].s));
+        if(!iret)
+            printf("fail");
+        ret &= iret;
+    }
+    return ret;
+}
+
 static bool test_copy_arg_empty() {
     log_set(tmpfile());
     const char *arg = "";
@@ -74,7 +101,9 @@ static bool test_exec() {
 static bool test_exec_output() {
     log_set(stderr);
     const char *argv[] = {"sh", "-c", "echo stdout && exec cat", NULL};
-    struct { int child_read, parent_write, parent_read, child_write; } fds;
+    struct {
+        int child_read, parent_write, parent_read, child_write;
+    } fds;
     assert(pipe(&fds.child_read) == 0);
     assert(pipe(&fds.parent_read) == 0);
     const pid_t pid = fork();
@@ -112,8 +141,7 @@ static bool test_wait_n_signal() {
     const pid_t pid1 = fork();
     if(!pid1)
         exit(EXIT_SUCCESS);
-    return ASSERT(!wait_n(2))
-        && CHECK_LOG("child exited: 0\n");
+    return ASSERT(!wait_n(2)) && CHECK_LOG("child exited: 0\n");
 }
 
 static bool test_wait_n_failure() {
@@ -187,8 +215,7 @@ static bool test_build_url_too_long() {
     bool ret = !build_url(buf, parts);
     free(input);
     free(buf);
-    return CHECK_LOG("url too long (1024 >= 1024): \n")
-        && ret;
+    return CHECK_LOG("url too long (1024 >= 1024): \n") && ret;
 }
 
 static bool test_build_url() {
@@ -204,6 +231,7 @@ static bool test_build_url() {
 int main() {
     bool ret = true;
     ret = RUN(test_log) && ret;
+    ret = RUN(test_is_prefix) && ret;
     ret = RUN(test_copy_arg_empty) && ret;
     ret = RUN(test_copy_arg_too_long) && ret;
     ret = RUN(test_copy_arg) && ret;

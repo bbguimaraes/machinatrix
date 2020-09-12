@@ -31,6 +31,13 @@ void log_err(const char *fmt, ...) {
     va_end(argp);
 }
 
+char *is_prefix(const char *prefix, const char *s) {
+    while(*prefix && *s)
+        if(*prefix++ != *s++)
+            return NULL;
+    return *prefix ? NULL : (char *)s;
+}
+
 bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
     if(!*src) {
         log_err("empty %s specified\n", name);
@@ -70,7 +77,7 @@ bool exec(const char *const *argv, int fin, int fout) {
         }
         close(fout);
     }
-    if(execvp(argv[0], (char *const*)argv) != -1)
+    if(execvp(argv[0], (char *const *)argv) != -1)
         return true;
     log_err("execvp: %s\n", strerror(errno));
     return false;

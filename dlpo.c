@@ -62,7 +62,9 @@ bool dlpo_print_definitions(TidyDoc doc, TidyNode node) {
                 tidyNodeGetText(doc, child, &buf);
                 unsigned char *b = buf.bp;
                 unsigned char *e = buf.bp + buf.size - 1;
-                trim_tag((const unsigned char**)&b, (const unsigned char**)&e);
+                const unsigned char **cb = (const unsigned char **)&b;
+                const unsigned char **ce = (const unsigned char **)&e;
+                trim_tag(cb, ce);
                 join_lines(b, e);
                 printf("  %.*s\n", (int)(e - b), b);
                 tidyBufFree(&buf);

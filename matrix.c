@@ -86,13 +86,13 @@ bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
     enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
-        [HELP]    = {"help",    no_argument,       0, 'h'},
-        [VERBOSE] = {"verbose", no_argument,       0, 'v'},
-        [DRY]     = {"dry-run", no_argument,       0, 'n'},
-        [SERVER]  = {"server",  required_argument, 0,  0 },
-        [USER]    = {"user",    required_argument, 0,  0 },
-        [TOKEN]   = {"token",   required_argument, 0,  0 },
-        [BATCH]   = {"batch",   required_argument, 0,  0 },
+        [HELP] = {"help", no_argument, 0, 'h'},
+        [VERBOSE] = {"verbose", no_argument, 0, 'v'},
+        [DRY] = {"dry-run", no_argument, 0, 'n'},
+        [SERVER] = {"server", required_argument, 0, 0},
+        [USER] = {"user", required_argument, 0, 0},
+        [TOKEN] = {"token", required_argument, 0, 0},
+        [BATCH] = {"batch", required_argument, 0, 0},
         {0, 0, 0, 0},
     };
     for(;;) {
@@ -134,7 +134,8 @@ bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
 }
 
 void usage(FILE *f) {
-    fprintf(f,
+    fprintf(
+        f,
         "usage: %s [options]\n\n"
         "Options:\n"
         "    -h, --help             this help\n"
