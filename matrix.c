@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,14 +14,33 @@
 #define SYNC_INTERVAL_S ((size_t)30U)
 #define SYNC_INTERVAL_MS_STR "30000"
 #define MIN_SYNC_INTERVAL_S ((size_t)5U)
+#define API_URL "/_matrix/client/r0"
+#define SYNC_URL API_URL "/sync"
+#define ROOM_FILTER "filter={\"room\":{\"timeline\":{\"limit\":1}}}"
+#define ROOMS_URL API_URL "/rooms"
+#define SEND_URL "/send/m.room.message"
+#define TIMEOUT_PARAM "timeout=" SYNC_INTERVAL_MS_STR
+#define URL_PARTS(c, ...) c->server, __VA_ARGS__, "access_token=", c->token
+#define BUILD_MATRIX_URL(c, url, ...) \
+    BUILD_URL(url, URL_PARTS(config, __VA_ARGS__))
+
 const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 
 int main(int argc, char *const *argv);
 bool parse_args(int *argc, char *const **argv, mtrix_config *config);
 void usage(FILE *f);
+cJSON *get_item(const cJSON *j, const char *k);
+bool initial_sync_url(const mtrix_config *config, char *url);
+bool send_url(const mtrix_config *config, char *url, const char *room);
 bool init_batch(const mtrix_config *config, char *batch);
 bool get_next_batch(cJSON *j, char *batch);
 bool loop(const mtrix_config *config, char *batch);
+cJSON *parse_request(const char *r);
+void handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
+bool check_event_type(const cJSON *event, const char *value);
+const char *event_body(const cJSON *event);
+const char *event_sender(const cJSON *event, const char *username);
+bool check_mention(const char *text, size_t user_len, const char *user);
 bool reply(const mtrix_config *config, const char *room, const char *input);
 bool send_msg(const mtrix_config *config, const char *room, const char *msg);
 
@@ -53,6 +73,7 @@ int main(int argc, char *const *argv) {
     }
     char batch[MAX_BATCH];
     if(*config.batch) {
+        assert(strlen(config.batch) < sizeof(batch));
         strcpy(batch, config.batch);
     } else if(!init_batch(&config, batch))
         return 1;
@@ -126,16 +147,22 @@ void usage(FILE *f) {
         PROG_NAME);
 }
 
+inline cJSON *get_item(const cJSON *j, const char *k) {
+    return cJSON_GetObjectItemCaseSensitive(j, k);
+}
+
+// TODO use Authorization header
+bool initial_sync_url(const mtrix_config *config, char *url) {
+    return BUILD_MATRIX_URL(config, url, SYNC_URL "?" ROOM_FILTER "&");
+}
+
+bool send_url(const mtrix_config *config, char *url, const char *room) {
+    return BUILD_MATRIX_URL(config, url, ROOMS_URL "/", room, SEND_URL "?");
+}
+
 bool init_batch(const mtrix_config *config, char *batch) {
-    // TODO use Authorization header
-    const char *url_parts[] = {
-        config->server,
-        "/_matrix/client/r0/sync"
-            "?filter={\"room\":{\"timeline\":{\"limit\":1}}}"
-            "&access_token=",
-        config->token, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    if(!build_url(url, url_parts))
+    if(!initial_sync_url(config, url))
         return false;
     mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, config->verbose)) {
@@ -162,14 +189,14 @@ cleanup:
 }
 
 bool get_next_batch(cJSON *j, char *batch) {
-    const cJSON *b = cJSON_GetObjectItemCaseSensitive(j, "next_batch");
-    if(!b || !cJSON_IsString(b)) {
-        log_err("'next_batch' not found or not string\n");
+    const cJSON *b = get_item(j, "next_batch");
+    if(!cJSON_IsString(b)) {
+        log_err("\"next_batch\" not found or not string\n");
         return false;
     }
     size_t len = strlen(b->valuestring);
     if(len >= MAX_BATCH) {
-        log_err("len('next_batch') >= MAX_BATCH\n");
+        log_err("len(next_batch) >= MAX_BATCH\n");
         return false;
     }
     strcpy(batch, b->valuestring);
@@ -177,98 +204,103 @@ bool get_next_batch(cJSON *j, char *batch) {
 }
 
 bool loop(const mtrix_config *config, char *batch) {
-    const char *username = config->user + 1;
-    size_t username_len = strchr(username, ':') - username;
-    const char *url_parts[] = {
-        config->server, "/_matrix/client/r0/sync?since=", batch,
-        "&timeout=" SYNC_INTERVAL_MS_STR
-        "&access_token=", config->token, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    mtrix_buffer buffer = {NULL, 0};
-    cJSON *root = NULL;
+    const char *const root = SYNC_URL "?" TIMEOUT_PARAM "&since=";
+    const char *const url_parts[] = {URL_PARTS(config, root, batch, "&"), NULL};
+    if(!build_url(url, url_parts))
+        return false;
+    const char *username = config->user + 1;
+    size_t user_len = strchr(username, ':') - username;
+    mtrix_buffer buffer = {0};
+    cJSON *req = NULL;
     for(;;) {
         const time_t start = time(NULL);
         if(!build_url(url, url_parts))
             return false;
         buffer.s = 0;
-        bool ret = request(url, &buffer, config->verbose);
-        if(!ret)
+        if(!request(url, &buffer, config->verbose))
             break;
-        root = cJSON_Parse(buffer.p);
-        if(!root) {
-            ret = false;
-            const char *err = cJSON_GetErrorPtr();
-            if(err)
-                log_err("%s\n", err);
+        if(!(req = parse_request(buffer.p)))
             break;
-        }
-        if(!get_next_batch(root, batch)) {
-            ret = false;
+        if(!get_next_batch(req, batch))
             break;
-        }
-        const cJSON *const rooms =
-            cJSON_GetObjectItemCaseSensitive(
-                cJSON_GetObjectItemCaseSensitive(root, "rooms"),
-                "join");
-        const cJSON *room = NULL;
-        cJSON_ArrayForEach(room, rooms) {
-            const cJSON *events =
-                cJSON_GetObjectItemCaseSensitive(
-                    cJSON_GetObjectItemCaseSensitive(room, "timeline"),
-                    "events");
-            const cJSON *event = NULL;
-            cJSON_ArrayForEach(event, events) {
-                const cJSON *type =
-                    cJSON_GetObjectItemCaseSensitive(event, "type");
-                if(!type || !cJSON_IsString(type)
-                        || strcmp(type->valuestring, "m.room.message"))
-                    continue;
-                const cJSON *const content =
-                    cJSON_GetObjectItemCaseSensitive(event, "content");
-                const cJSON *const msg_type =
-                    cJSON_GetObjectItemCaseSensitive(content, "msgtype");
-                if(!msg_type || !cJSON_IsString(msg_type)
-                        || strcmp(msg_type->valuestring, "m.text"))
-                    continue;
-                const cJSON *const text =
-                    cJSON_GetObjectItemCaseSensitive(content, "body");
-                if(!text || !cJSON_IsString(text))
-                    continue;
-                const cJSON *const sender =
-                    cJSON_GetObjectItemCaseSensitive(event, "sender");
-                if(!sender || !cJSON_IsString(sender)
-                        || !strcmp(sender->valuestring, config->user))
-                    continue;
-                if(config->verbose)
-                    printf(
-                        "Message (from %s): %s\n",
-                        sender->valuestring, text->valuestring);
-                if(strncmp(text->valuestring, username, username_len)
-                        || *(text->valuestring + username_len) != ':') {
-                    if(config->verbose)
-                        printf(
-                            "Skipping: '%.*s' != '%.*s:'\n",
-                            (int)username_len + 1, text->valuestring,
-                            (int)username_len, username);
-                    continue;
-                }
-                if(!reply(
-                        config, room->string,
-                        text->valuestring + username_len + 1))
-                    ; // TODO
-            }
-        }
+        handle_request(config, req, user_len);
         const time_t dt = time(NULL) - start;
         if(config->verbose)
             printf("Elapsed: %lds\n", dt);
     }
     free(buffer.p);
-    cJSON_Delete(root);
-    return true;
+    cJSON_Delete(req);
+    return false;
+}
+
+void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
+    const cJSON *const join = get_item(get_item(root, "rooms"), "join");
+    const cJSON *room = NULL;
+    cJSON_ArrayForEach(room, join) {
+        const cJSON *events = get_item(get_item(room, "timeline"), "events");
+        const cJSON *event = NULL;
+        cJSON_ArrayForEach(event, events) {
+            if(!check_event_type(event, "m.room.message"))
+                continue;
+            const char *const text = event_body(event);
+            if(!text)
+                continue;
+            const char *const sender = event_sender(event, config->user);
+            if(config->verbose)
+                printf("Message (from %s): %s\n", sender, text);
+            if(!check_mention(text, user_len, config->user)) {
+                if(config->verbose)
+                    printf("Skipping message: not mentioned\n");
+                continue;
+            }
+            if(!reply(config, room->string, text + user_len + 1))
+                ; // TODO
+        }
+    }
+}
+
+cJSON *parse_request(const char *r) {
+    cJSON *const j = cJSON_Parse(r);
+    if(!j) {
+        const char *err = cJSON_GetErrorPtr();
+        if(err)
+            log_err("%s\n", err);
+    }
+    return j;
+}
+
+bool check_event_type(const cJSON *event, const char *value) {
+    const cJSON *const t = get_item(event, "type");
+    return cJSON_IsString(t) && strcmp(t->valuestring, value) == 0;
+}
+
+const char *event_body(const cJSON *event) {
+    const cJSON *const content = get_item(event, "content");
+    if(!content)
+        return NULL;
+    const cJSON *const type = get_item(content, "msgtype");
+    if(!cJSON_IsString(type) || strcmp(type->valuestring, "m.text") != 0)
+        return NULL;
+    const cJSON *const body = get_item(content, "body");
+    return (body && cJSON_IsString(body)) ? body->valuestring : NULL;
+}
+
+const char *event_sender(const cJSON *event, const char *username) {
+    const cJSON *const j = get_item(event, "sender");
+    return (cJSON_IsString(j) && strcmp(j->valuestring, username) != 0)
+        ? j->valuestring
+        : NULL;
+}
+
+bool check_mention(const char *text, size_t user_len, const char *user) {
+    return strncmp(text, user, user_len) == 0 && text[user_len] == ':';
 }
 
 bool reply(const mtrix_config *config, const char *room, const char *input) {
     int in[2] = {0, 0}, out[2] = {0, 0};
+    FILE *child_in = NULL, *child_out = NULL;
+    mtrix_buffer msg = {NULL, 0};
     bool ret = true;
     if(pipe(in) == -1 || pipe(out) == -1) {
         ret = false;
@@ -289,7 +321,8 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     }
     close(in[0]);
     close(out[1]);
-    FILE *child_in = fdopen(in[1], "w"), *child_out = fdopen(out[0], "r");
+    child_in = fdopen(in[1], "w");
+    child_out = fdopen(out[0], "r");
     if(!child_in || !child_out) {
         ret = false;
         log_err("fdopen: %s\n", strerror(errno));
@@ -302,7 +335,6 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     }
     fclose(child_in);
     child_in = 0;
-    mtrix_buffer msg = {NULL, 0};
     char *buffer = 0;
     for(;;) {
         size_t len;
@@ -332,13 +364,8 @@ cleanup:
 }
 
 bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
-    const char *url_parts[] = {
-        config->server,
-        "/_matrix/client/r0/rooms/", room,
-        "/send/m.room.message?access_token=",
-        config->token, NULL};
     char url[MTRIX_MAX_URL_LEN];
-    if(!build_url(url, url_parts))
+    if(!send_url(config, url, room))
         return false;
     cJSON *msg_json = cJSON_CreateObject();
     cJSON_AddItemToObject(msg_json, "msgtype", cJSON_CreateString("m.text"));

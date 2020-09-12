@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #define MTRIX_MAX_URL_LEN ((size_t)1024U)
+#define BUILD_URL(url, ...) build_url(url, (const char *[]){__VA_ARGS__, NULL})
 
 extern const char *PROG_NAME;
 extern const char *CMD_NAME;
@@ -49,7 +50,7 @@ size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b);
 /**
  * build_url joins several URL parts into one, limited to MTRIX_MAX_URL_LEN.
  */
-bool build_url(char *url, const char **v);
+bool build_url(char *url, const char *const *v);
 
 bool request(const char *url, mtrix_buffer *b, bool verbose);
 

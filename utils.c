@@ -133,7 +133,7 @@ size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b) {
     return r;
 }
 
-bool build_url(char *url, const char **v) {
+bool build_url(char *url, const char *const *v) {
     size_t m = MTRIX_MAX_URL_LEN;
     char *p = url;
     for(; *v; ++v) {
