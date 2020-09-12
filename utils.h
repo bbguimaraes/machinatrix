@@ -20,6 +20,11 @@ FILE *log_set(FILE *f);
 void log_err(const char *fmt, ...);
 
 /**
+ * is_prefix checks if a string has a certain prefix.
+ */
+char *is_prefix(const char *prefix, const char *s);
+
+/**
  * copy_arg copies a value from an argv-style array.
  * Checks for non-emptiness and length are performed and errors are logged.
  */
@@ -40,7 +45,10 @@ bool wait_n(size_t n);
  */
 void join_lines(unsigned char *b, unsigned char *e);
 
-typedef struct { char *p; size_t s; } mtrix_buffer;
+typedef struct {
+    char *p;
+    size_t s;
+} mtrix_buffer;
 
 /**
  * mtrix_buffer_append copies data to the buffer, reallocating if necessary.

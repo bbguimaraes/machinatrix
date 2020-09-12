@@ -5,17 +5,16 @@
 #define HTML_START \
     "<!DOCTYPE html><html><head><title>title</title></head><body>"
 #define HTML_END "</body></html>"
+#define HTML(x) HTML_START x HTML_END
 
 const char *PROG_NAME = NULL;
 const char *CMD_NAME = NULL;
 
 static bool test_find_node_by_name() {
-    const char html[] =
-        HTML_START
+    const char html[] = HTML(
         "<h1>h1</h1>"
         "<span name=\"span\"/>"
-        "<div name=\"div\"/>"
-        HTML_END;
+        "<div name=\"div\"/>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
     const TidyNode node =
@@ -28,12 +27,10 @@ static bool test_find_node_by_name() {
 }
 
 static bool test_find_node_by_name_prefix() {
-    const char html[] =
-        HTML_START
+    const char html[] = HTML(
         "<span name=\"span\"/>"
         "<div name=\"div\"/>"
-        "<h1>h1</h1>"
-        HTML_END;
+        "<h1>h1</h1>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
     const TidyNode node =
@@ -46,12 +43,10 @@ static bool test_find_node_by_name_prefix() {
 }
 
 static bool test_find_node_by_id() {
-    const char html[] =
-        HTML_START
+    const char html[] = HTML(
         "<h1 id=\"h1\">h1</h1>"
         "<span id=\"span\"/>"
-        "<div id=\"test\"/>"
-        HTML_END;
+        "<div id=\"test\"/>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
     const TidyNode node = find_node_by_id(tidyGetBody(doc), "test", false);
@@ -66,14 +61,12 @@ static bool test_find_node_by_id() {
 }
 
 static bool test_find_node_by_id_rec() {
-    const char html[] =
-        HTML_START
+    const char html[] = HTML(
         "<div>"
-            "<h1 id=\"h1\">h1</h1>"
-            "<span id=\"span\"/>"
-            "<div id=\"test\"/>"
-        "</div>"
-        HTML_END;
+        "<h1 id=\"h1\">h1</h1>"
+        "<span id=\"span\"/>"
+        "<div id=\"test\"/>"
+        "</div>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
     const TidyNode first = tidyGetBody(doc);
@@ -90,10 +83,7 @@ static bool test_find_node_by_id_rec() {
 }
 
 static bool test_find_attr() {
-    const char html[] =
-        HTML_START
-        "<div name=\"name\" id=\"id\" style=\"test\" />"
-        HTML_END;
+    const char html[] = HTML("<div name=\"name\" id=\"id\" style=\"test\" />");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
     const TidyAttr attr = find_attr(tidyGetChild(tidyGetBody(doc)), "style");
@@ -142,7 +132,7 @@ static bool test_print_unescaped() {
         "<p>A paragraph of <b>text</b> with <i>several</i> HTML tags.</p>"
         "<hr />"
         "<img src=\"test.png\" />";
-    print_unescaped(out, (const unsigned char*)buf);
+    print_unescaped(out, (const unsigned char *)buf);
     const size_t n = ftell(out);
     assert(n >= 0);
     assert(n < sizeof(buf));
