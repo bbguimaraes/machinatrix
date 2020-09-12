@@ -108,7 +108,8 @@ void usage(FILE *f) {
         "    parl:          use unparliamentary language\n"
         "    bard:          random Shakespearean insult\n"
         "    dlpo <term>:   lookup etymology (DLPO)\n"
-        "    wikt <term>:   lookup etymology (Wiktionary)\n",
+        "    wikt <term>:   lookup etymology (Wiktionary)\n"
+        "    tr <term>:     lookup translation (Wiktionary)\n",
         PROG_NAME);
 }
 
