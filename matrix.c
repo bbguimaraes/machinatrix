@@ -343,12 +343,12 @@ bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
     cJSON *msg_json = cJSON_CreateObject();
     cJSON_AddItemToObject(msg_json, "msgtype", cJSON_CreateString("m.text"));
     cJSON_AddItemToObject(msg_json, "body", cJSON_CreateString(msg));
-    char *msg_str = cJSON_PrintUnformatted(msg_json);
+    char *data = cJSON_PrintUnformatted(msg_json);
     free(msg_json);
     mtrix_buffer resp = {NULL, 0};
-    const bool ret =
-        post(url, strlen(msg_str), msg_str, &resp, config->verbose);
-    free(msg_str);
+    const post_request r = {.url = url, .data_len = strlen(data), .data = data};
+    const bool ret = post(r, config->verbose, &resp);
+    free(data);
     free(resp.p);
     return ret;
 }

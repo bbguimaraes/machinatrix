@@ -171,14 +171,12 @@ bool request(const char *url, mtrix_buffer *b, bool verbose) {
     return ret;
 }
 
-bool post(
-        const char *url, size_t n, const char *data,
-        mtrix_buffer *b, bool verbose) {
-    CURL *curl = init_curl(url, b, verbose);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, n);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+bool post(post_request r, bool verbose, mtrix_buffer *b) {
+    CURL *curl = init_curl(r.url, b, verbose);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, r.data_len);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, r.data);
     if(verbose)
-        printf("Request: POST %s\n", url);
+        printf("Request: POST %s\n", r.url);
     bool ret = !curl_easy_perform(curl);
     if(verbose && ret)
         printf("Response:\n%s\n", b->p);
