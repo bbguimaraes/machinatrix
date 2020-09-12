@@ -5,7 +5,7 @@
 #include "html.h"
 #include "utils.h"
 
-static const char *TOC_ID = "toc";
+#define TOC_ID "toc"
 
 bool wikt_parse_page(TidyDoc doc, wikt_page *p) {
     TidyNode node = find_node_by_id(tidyGetBody(doc), TOC_ID, true);
@@ -32,48 +32,47 @@ TidyNode wikt_find_lang(TidyNode node, const char *name) {
 }
 
 TidyNode wikt_translation_head(TidyNode n) {
-    return (n = tidyGetChild(n))
-        && (n = tidyGetChild(n))
-        ? n : NULL;
+    return (n = tidyGetChild(n)) && (n = tidyGetChild(n)) ? n : NULL;
 }
 
 TidyNode wikt_translation_body(TidyNode n) {
-    return (n = tidyGetChild(n))
-        && (n = tidyGetNext(n))
-        && (n = tidyGetChild(n))
-        && (n = find_node_by_name(n, "table"))
-        && (n = tidyGetChild(n))
-        && (n = tidyGetChild(n))
-        ? n : NULL;
+    return (n = tidyGetChild(n)) && (n = tidyGetNext(n))
+            && (n = tidyGetChild(n)) && (n = find_node_by_name(n, "table"))
+            && (n = tidyGetChild(n)) && (n = tidyGetChild(n))
+        ? n
+        : NULL;
 }
 
-static bool wikt_next(
-        const char *header, const char *prefix, size_t len, TidyNode *node,
-        bool sub) {
-    while(*node) {
-        *node = tidyGetNext(*node);
-        const char *name = tidyNodeGetName(*node);
+static bool
+next(const char *header, const char *prefix, TidyNode *n, bool sub) {
+    bool ret = false;
+    TidyNode node = *n;
+    while((node = tidyGetNext(node))) {
+        const char *name = tidyNodeGetName(node);
         if(!name)
             continue;
         if(strcmp(name, "h2") == 0)
             break;
         if(strcmp(name, header) != 0)
             continue;
-        TidyNode cmp = sub ? *node : tidyGetChild(*node);
+        TidyNode cmp = sub ? node : tidyGetChild(node);
         TidyAttr attr = find_attr(cmp, "id");
         if(!attr)
             continue;
         const char *id = tidyAttrValue(attr);
-        if(!id || strncmp(id, prefix, len))
+        if(!id || !is_prefix(prefix, id))
             continue;
-        return true;
+        ret = true;
+        break;
     }
-    return false;
+    *n = node;
+    return ret;
 }
 
-bool wikt_next_section(
-        const char *header, const char *prefix, size_t len, TidyNode *node)
-    { return wikt_next(header, prefix, len, node, false); }
-bool wikt_next_subsection(
-        const char *tag, const char *prefix, size_t len, TidyNode *node)
-    { return wikt_next(tag, prefix, len, node, true); }
+bool wikt_next_section(const char *header, const char *prefix, TidyNode *node) {
+    return next(header, prefix, node, false);
+}
+
+bool wikt_next_subsection(const char *tag, const char *prefix, TidyNode *node) {
+    return next(tag, prefix, node, true);
+}
