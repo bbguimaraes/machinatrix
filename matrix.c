@@ -29,6 +29,7 @@ const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 int main(int argc, char *const *argv);
 static bool parse_args(int *argc, char *const **argv, mtrix_config *config);
 static void usage(FILE *f);
+static bool read_token(char *token, size_t max);
 static cJSON *get_item(const cJSON *j, const char *k);
 static bool initial_sync_url(const mtrix_config *config, char *url);
 static bool send_url(const mtrix_config *config, char *url, const char *room);
@@ -120,8 +121,9 @@ bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
                 return false;
             break;
         case TOKEN:
-            // TODO read from file
             if(!copy_arg("token", config->token, optarg, MAX_TOKEN))
+                return false;
+            if(!read_token(config->token, MAX_TOKEN))
                 return false;
             break;
         case BATCH:
@@ -153,6 +155,41 @@ void usage(FILE *f) {
 
 inline cJSON *get_item(const cJSON *j, const char *k) {
     return cJSON_GetObjectItemCaseSensitive(j, k);
+}
+
+bool read_token(char *token, size_t max) {
+    bool ret = false;
+    FILE *f = fopen(token, "rb");
+    if(!f) {
+        log_err("fopen: %s\n", strerror(errno));
+        return false;
+    }
+    char *p = token;
+    for(;;) {
+        size_t n = fread(p, 1, max, f);
+        if(ferror(f)) {
+            log_err("fread: %s\n", strerror(errno));
+            break;
+        }
+        p += n;
+        max -= n;
+        if(!max) {
+            log_err("token too long\n");
+            break;
+        }
+        if(feof(f)) {
+            ret = true;
+            *p-- = 0;
+            while(p >= token && *p == '\n')
+                *p-- = 0;
+            break;
+        }
+    }
+    if(fclose(f) == EOF) {
+        log_err("fclose: %s\n", strerror(errno));
+        return false;
+    }
+    return ret;
 }
 
 // TODO use Authorization header

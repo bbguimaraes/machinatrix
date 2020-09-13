@@ -46,4 +46,4 @@ commands.
     $ ./machinatrix_matrix \
         --server matrix.example.com \
         --user @machinatrix:matrix.example.com \
-        --token 123456
+        --token /path/to/token_file
