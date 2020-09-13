@@ -22,15 +22,6 @@ bool wikt_parse_page(TidyDoc doc, wikt_page *p) {
     return true;
 }
 
-TidyNode wikt_find_lang(TidyNode node, const char *name) {
-    for(; node; node = tidyGetNext(node)) {
-        const char *n = tidyNodeGetName(node);
-        if(n && strcmp(n, name) == 0)
-            return node;
-    }
-    return NULL;
-}
-
 TidyNode wikt_translation_head(TidyNode n) {
     return (n = tidyGetChild(n)) && (n = tidyGetChild(n)) ? n : NULL;
 }
