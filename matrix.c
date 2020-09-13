@@ -29,6 +29,7 @@ const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 int main(int argc, char *const *argv);
 static bool parse_args(int *argc, char *const **argv, mtrix_config *config);
 static void usage(FILE *f);
+static bool short_username(const char *user, char *out);
 static bool read_token(char *token, size_t max);
 static cJSON *get_item(const cJSON *j, const char *k);
 static bool initial_sync_url(const mtrix_config *config, char *url);
@@ -41,8 +42,8 @@ static void
 handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
 static bool check_event_type(const cJSON *event, const char *value);
 static const char *event_body(const cJSON *event);
-static const char *event_sender(const cJSON *event, const char *username);
-static bool check_mention(const char *text, size_t user_len, const char *user);
+static const char *event_sender(const cJSON *event, const char *user);
+static bool check_mention(const char *text, const char *user);
 static bool
 reply(const mtrix_config *config, const char *room, const char *input);
 static bool
@@ -119,6 +120,8 @@ bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
         case USER:
             if(!copy_arg("user name", config->user, optarg, MAX_USER))
                 return false;
+            if(!short_username(config->user, config->short_user))
+                return false;
             break;
         case TOKEN:
             if(!copy_arg("token", config->token, optarg, MAX_TOKEN))
@@ -155,6 +158,21 @@ void usage(FILE *f) {
 
 inline cJSON *get_item(const cJSON *j, const char *k) {
     return cJSON_GetObjectItemCaseSensitive(j, k);
+}
+
+bool short_username(const char *user, char *out) {
+    if(*user != '@') {
+        log_err("user missing \"@\" prefix\n");
+        return false;
+    }
+    ++user;
+    const char *colon = strchr(user, ':');
+    if(!colon) {
+        log_err("user missing \":\" character\n");
+        return false;
+    }
+    memcpy(out, user, colon - user);
+    return true;
 }
 
 bool read_token(char *token, size_t max) {
@@ -250,8 +268,7 @@ bool loop(const mtrix_config *config, char *batch) {
     const char *const url_parts[] = {URL_PARTS(config, root, batch, "&"), NULL};
     if(!build_url(url, url_parts))
         return false;
-    const char *username = config->user + 1;
-    size_t user_len = strchr(username, ':') - username;
+    size_t user_len = strlen(config->short_user);
     mtrix_buffer buffer = {0};
     cJSON *req = NULL;
     for(;;) {
@@ -288,9 +305,19 @@ void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
             if(!text)
                 continue;
             const char *const sender = event_sender(event, config->user);
+            if(!sender) {
+                if(config->verbose)
+                    printf("Skipping message without sender: %s\n", text);
+                continue;
+            }
             if(config->verbose)
                 printf("Message (from %s): %s\n", sender, text);
-            if(!check_mention(text, user_len, config->user)) {
+            if(strcmp(sender, config->user) == 0) {
+                if(config->verbose)
+                    printf("Skipping message from self\n");
+                continue;
+            }
+            if(!check_mention(text, config->short_user)) {
                 if(config->verbose)
                     printf("Skipping message: not mentioned\n");
                 continue;
@@ -327,15 +354,14 @@ const char *event_body(const cJSON *event) {
     return (body && cJSON_IsString(body)) ? body->valuestring : NULL;
 }
 
-const char *event_sender(const cJSON *event, const char *username) {
+const char *event_sender(const cJSON *event, const char *user) {
     const cJSON *const j = get_item(event, "sender");
-    return (cJSON_IsString(j) && strcmp(j->valuestring, username) != 0)
-        ? j->valuestring
-        : NULL;
+    return (cJSON_IsString(j) && j->valuestring) ? j->valuestring : NULL;
 }
 
-bool check_mention(const char *text, size_t user_len, const char *user) {
-    return strncmp(text, user, user_len) == 0 && text[user_len] == ':';
+bool check_mention(const char *text, const char *user) {
+    const char *colon = is_prefix(user, text);
+    return colon && *colon == ':';
 }
 
 bool reply(const mtrix_config *config, const char *room, const char *input) {
