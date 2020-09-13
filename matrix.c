@@ -52,8 +52,7 @@ send_msg(const mtrix_config *config, const char *room, const char *msg);
 int main(int argc, char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
-    mtrix_config config;
-    init_config(&config);
+    mtrix_config config = {0};
     if(!parse_args(&argc, &argv, &config))
         return 1;
     if(config.help) {

@@ -11,5 +11,3 @@ typedef struct {
     char server[MAX_SERVER], token[MAX_TOKEN];
     char user[MAX_USER], short_user[MAX_USER], batch[MAX_BATCH];
 } mtrix_config;
-
-void init_config(mtrix_config *config);
