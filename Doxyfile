@@ -1,0 +1,14 @@
+PROJECT_NAME           = "machinatrix"
+PROJECT_BRIEF          = "A very silly Matrix bot written in C"
+OUTPUT_DIRECTORY       = "docs"
+HTML_EXTRA_STYLESHEET  = "docs/custom.css" "docs/custom_dark_theme.css"
+JAVADOC_AUTOBRIEF      = YES
+ALWAYS_DETAILED_SEC    = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_STATIC         = YES
+GENERATE_TREEVIEW      = YES
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+INTERACTIVE_SVG        = YES
+USE_MDFILE_AS_MAINPAGE = README.md

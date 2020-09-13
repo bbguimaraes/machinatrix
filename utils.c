@@ -118,13 +118,13 @@ size_t curl_write_cb(char *in, size_t size, size_t nmemb, TidyBuffer *out) {
     return r;
 }
 
-size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b) {
+size_t mtrix_buffer_append(char *p, size_t size, size_t n, mtrix_buffer *b) {
     if(!size || !n)
         return 0;
     size_t r = size * n;
     if(!b->p) {
         b->p = malloc(r + 1);
-        memcpy(b->p, in, r);
+        memcpy(b->p, p, r);
         b->s = r;
     } else {
         char *n = realloc(b->p, b->s + r + 1);
@@ -133,7 +133,7 @@ size_t mtrix_buffer_append(char *in, size_t size, size_t n, mtrix_buffer *b) {
             return 0;
         }
         b->p = n;
-        memcpy(b->p + b->s, in, r);
+        memcpy(b->p + b->s, p, r);
         b->s += r;
     }
     b->p[b->s] = 0;

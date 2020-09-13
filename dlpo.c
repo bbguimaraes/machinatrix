@@ -5,7 +5,7 @@
 #include "html.h"
 #include "utils.h"
 
-TidyNode dlpo_find_definitions(TidyDoc doc, TidyNode node) {
+TidyNode dlpo_find_definitions(TidyNode node) {
     if(!(node = tidyGetChild(node))) {
         log_err("no children\n");
         return NULL;
@@ -25,7 +25,7 @@ TidyNode dlpo_find_definitions(TidyDoc doc, TidyNode node) {
     return NULL;
 }
 
-bool dlpo_print_definitions(TidyDoc doc, TidyNode node) {
+bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node) {
     for(;; node = tidyGetNext(node)) {
         node = find_node_by_name(node, "br");
         if(!node)
@@ -46,7 +46,7 @@ bool dlpo_print_definitions(TidyDoc doc, TidyNode node) {
         {
             TidyBuffer buf = {0};
             tidyNodeGetText(doc, child, &buf);
-            printf("- %s", buf.bp);
+            fprintf(f, "- %s", buf.bp);
             tidyBufFree(&buf);
         }
         child = tidyGetNext(tidyGetChild(node));
@@ -66,7 +66,7 @@ bool dlpo_print_definitions(TidyDoc doc, TidyNode node) {
                 const unsigned char **ce = (const unsigned char **)&e;
                 trim_tag(cb, ce);
                 join_lines(b, e);
-                printf("  %.*s\n", (int)(e - b), b);
+                fprintf(f, "  %.*s\n", (int)(e - b), b);
                 tidyBufFree(&buf);
                 break;
             }
