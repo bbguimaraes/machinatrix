@@ -169,13 +169,17 @@ static CURL *init_curl(const char *url, mtrix_buffer *b, bool verbose) {
 
 bool request(const char *url, mtrix_buffer *b, bool verbose) {
     CURL *curl = init_curl(url, b, verbose);
+    char err[CURL_ERROR_SIZE];
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, err);
     if(verbose)
         printf("Request: GET %s\n", url);
-    bool ret = !curl_easy_perform(curl);
-    if(verbose && ret)
+    CURLcode ret = curl_easy_perform(curl);
+    if(ret != CURLE_OK)
+        log_err("%d: %s: %s\n", ret, err, *err ? err : curl_easy_strerror(ret));
+    else if(verbose)
         printf("Response:\n%s\n", b->p);
     curl_easy_cleanup(curl);
-    return ret;
+    return ret == CURLE_OK;
 }
 
 bool post(post_request r, bool verbose, mtrix_buffer *b) {
