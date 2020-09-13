@@ -27,21 +27,21 @@ typedef struct {
 } mtrix_cmd;
 
 int main(int argc, const char *const *argv);
-bool parse_args(int argc, char *const **argv, mtrix_config *config);
-void usage(FILE *f);
-bool handle_cmd(const mtrix_config *config, const char *const *argv);
-bool handle_file(const mtrix_config *config, FILE *f);
-void str_to_args(char *str, size_t max_args, char **argv);
-bool cmd_help(const mtrix_config *config, const char *const *argv);
-bool cmd_ping(const mtrix_config *config, const char *const *argv);
-bool cmd_word(const mtrix_config *config, const char *const *argv);
-bool cmd_abbr(const mtrix_config *config, const char *const *argv);
-bool cmd_damn(const mtrix_config *config, const char *const *argv);
-bool cmd_parl(const mtrix_config *config, const char *const *argv);
-bool cmd_bard(const mtrix_config *config, const char *const *argv);
-bool cmd_dlpo(const mtrix_config *config, const char *const *argv);
-bool cmd_wikt(const mtrix_config *config, const char *const *argv);
-bool cmd_tr(const mtrix_config *config, const char *const *argv);
+static bool parse_args(int argc, char *const **argv, mtrix_config *config);
+static void usage(FILE *f);
+static bool handle_cmd(const mtrix_config *config, const char *const *argv);
+static bool handle_file(const mtrix_config *config, FILE *f);
+static void str_to_args(char *str, size_t max_args, char **argv);
+static bool cmd_help(const mtrix_config *config, const char *const *argv);
+static bool cmd_ping(const mtrix_config *config, const char *const *argv);
+static bool cmd_word(const mtrix_config *config, const char *const *argv);
+static bool cmd_abbr(const mtrix_config *config, const char *const *argv);
+static bool cmd_damn(const mtrix_config *config, const char *const *argv);
+static bool cmd_parl(const mtrix_config *config, const char *const *argv);
+static bool cmd_bard(const mtrix_config *config, const char *const *argv);
+static bool cmd_dlpo(const mtrix_config *config, const char *const *argv);
+static bool cmd_wikt(const mtrix_config *config, const char *const *argv);
+static bool cmd_tr(const mtrix_config *config, const char *const *argv);
 
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},

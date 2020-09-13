@@ -27,22 +27,25 @@
 const char *PROG_NAME = NULL, *CMD_NAME = NULL;
 
 int main(int argc, char *const *argv);
-bool parse_args(int *argc, char *const **argv, mtrix_config *config);
-void usage(FILE *f);
-cJSON *get_item(const cJSON *j, const char *k);
-bool initial_sync_url(const mtrix_config *config, char *url);
-bool send_url(const mtrix_config *config, char *url, const char *room);
-bool init_batch(const mtrix_config *config, char *batch);
-bool get_next_batch(cJSON *j, char *batch);
-bool loop(const mtrix_config *config, char *batch);
-cJSON *parse_request(const char *r);
-void handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
-bool check_event_type(const cJSON *event, const char *value);
-const char *event_body(const cJSON *event);
-const char *event_sender(const cJSON *event, const char *username);
-bool check_mention(const char *text, size_t user_len, const char *user);
-bool reply(const mtrix_config *config, const char *room, const char *input);
-bool send_msg(const mtrix_config *config, const char *room, const char *msg);
+static bool parse_args(int *argc, char *const **argv, mtrix_config *config);
+static void usage(FILE *f);
+static cJSON *get_item(const cJSON *j, const char *k);
+static bool initial_sync_url(const mtrix_config *config, char *url);
+static bool send_url(const mtrix_config *config, char *url, const char *room);
+static bool init_batch(const mtrix_config *config, char *batch);
+static bool get_next_batch(cJSON *j, char *batch);
+static bool loop(const mtrix_config *config, char *batch);
+static cJSON *parse_request(const char *r);
+static void
+handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
+static bool check_event_type(const cJSON *event, const char *value);
+static const char *event_body(const cJSON *event);
+static const char *event_sender(const cJSON *event, const char *username);
+static bool check_mention(const char *text, size_t user_len, const char *user);
+static bool
+reply(const mtrix_config *config, const char *room, const char *input);
+static bool
+send_msg(const mtrix_config *config, const char *room, const char *msg);
 
 int main(int argc, char *const *argv) {
     log_set(stderr);
