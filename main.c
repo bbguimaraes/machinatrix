@@ -1,3 +1,7 @@
+/**
+ * \file
+ * Main robot implementation.
+ */
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,35 +18,133 @@
 #include "utils.h"
 #include "wikt.h"
 
-const char *PROG_NAME = NULL, *CMD_NAME = NULL;
-#define MAX_ARGS ((size_t)1U)
-#define DICT_FILE "/usr/share/dict/words"
-#define DLPO_BASE "https://dicionario.priberam.org"
-#define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
+/**
+ * To be filled by `argv[0]` later, for logging.
+ */
+const char *PROG_NAME = NULL;
 
+/**
+ * Set while processing a command.
+ */
+const char *CMD_NAME = NULL;
+
+/**
+ * Maximum number of command arguments (excluding the command name).
+ */
+#define MAX_ARGS ((size_t)1U)
+
+/**
+ * Dictionary file used for commands that require a list of words.
+ */
+#define DICT_FILE "/usr/share/dict/words"
+
+/**
+ * Function that handles a command.
+ */
 typedef bool mtrix_cmd_f(const mtrix_config *, const char *const *);
+
+/**
+ * Structure that associates a \ref mtrix_cmd_f to a command.
+ */
 typedef struct {
+    /**
+     * Command name.
+     */
     const char *name;
+    /**
+     * Function that handles the command.
+     */
     mtrix_cmd_f *f;
 } mtrix_cmd;
 
+/**
+ * Program entry point.
+ */
 int main(int argc, const char *const *argv);
+
+/**
+ * Parses command-line arguments and fills `config`.
+ */
 static bool parse_args(int argc, char *const **argv, mtrix_config *config);
+
+/**
+ * Prints a usage message.
+ */
 static void usage(FILE *f);
+
+/**
+ * Handles a command passed via the command line.
+ */
 static bool handle_cmd(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Handles commands read as lines from a file.
+ */
 static bool handle_file(const mtrix_config *config, FILE *f);
+
+/**
+ * Breaks string into space-separated parts.
+ * \param str Input string, modified to include null terminators.
+ * \param max_args Maximum length for `argv`, including the null terminator.
+ * \param argv Populated with pointers to the null-terminated strings in `str`.
+ */
 static void str_to_args(char *str, size_t max_args, char **argv);
+
+/**
+ * Implements the `help` command.
+ */
 static bool cmd_help(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `ping` command.
+ */
 static bool cmd_ping(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `word` command.
+ */
 static bool cmd_word(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `abbr` command.
+ */
 static bool cmd_abbr(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `damn` command.
+ */
 static bool cmd_damn(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `parl` command.
+ */
 static bool cmd_parl(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `bard` command.
+ */
 static bool cmd_bard(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `dlpo` command.
+ */
 static bool cmd_dlpo(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `wikt` command.
+ */
 static bool cmd_wikt(const mtrix_config *config, const char *const *argv);
+
+/**
+ * Implements the `tr` command.
+ */
 static bool cmd_tr(const mtrix_config *config, const char *const *argv);
 
+/**
+ * Maps a command name to the function that handles it.
+ * Terminated by a `{NULL, NULL}` entry.
+ */
+// clang-format off
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
     {"ping", cmd_ping},
@@ -54,8 +156,9 @@ mtrix_cmd COMMANDS[] = {
     {"dlpo", cmd_dlpo},
     {"wikt", cmd_wikt},
     {"tr", cmd_tr},
-    {0, 0},
+    {NULL, NULL},
 };
+// clang-format on
 
 int main(int argc, const char *const *argv) {
     log_set(stderr);
@@ -151,7 +254,7 @@ bool handle_file(const mtrix_config *config, FILE *f) {
         }
         CMD_NAME = cmd->name;
         ret = cmd->f(config, (const char *const *)argv + 1);
-        CMD_NAME = 0;
+        CMD_NAME = NULL;
         if(!ret)
             break;
     }
@@ -582,10 +685,10 @@ bool cmd_dlpo(const mtrix_config *config, const char *const *argv) {
         log_err("element '#%s' not found\n", id);
         goto cleanup;
     }
-    TidyNode def = dlpo_find_definitions(tidy_doc, res);
+    TidyNode def = dlpo_find_definitions(res);
     if(!def)
         goto cleanup;
-    dlpo_print_definitions(tidy_doc, def);
+    dlpo_print_definitions(stdout, tidy_doc, def);
     ret = true;
 cleanup:
     tidyRelease(tidy_doc);

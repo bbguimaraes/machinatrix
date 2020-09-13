@@ -1,6 +1,27 @@
+/**
+ * \file
+ * Functions to process and navigate DLPO pages.
+ * http://www.priberam.pt/dlpo
+ */
 #include <stdbool.h>
 
 #include <tidy.h>
 
-TidyNode dlpo_find_definitions(TidyDoc doc, TidyNode node);
-bool dlpo_print_definitions(TidyDoc doc, TidyNode node);
+/**
+ * Base URL for the service.
+ */
+#define DLPO_BASE "https://dicionario.priberam.org"
+
+/**
+ * Finds the element containing the word definitions.
+ * \param node The `#resultados` element.
+ */
+TidyNode dlpo_find_definitions(TidyNode node);
+
+/**
+ * Prints the definitions in plain text.
+ * \param f Output stream.
+ * \param doc The root document.
+ * \param node The element returned by \ref dlpo_find_definitions.
+ */
+bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node);

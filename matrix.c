@@ -1,3 +1,8 @@
+/**
+ * \file
+ * Program that interacts with the Matrix server.  Executes the main program to
+ * handle the commands.
+ */
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -11,41 +16,149 @@
 #include "config.h"
 #include "utils.h"
 
-#define SYNC_INTERVAL_S ((size_t)30U)
-#define SYNC_INTERVAL_MS_STR "30000"
-#define MIN_SYNC_INTERVAL_S ((size_t)5U)
+/**
+ * Root URL for the Matrix API.
+ */
 #define API_URL "/_matrix/client/r0"
+
+/**
+ * URL for the synchronization endpoint.
+ */
 #define SYNC_URL API_URL "/sync"
+
+/**
+ * Limits the number of synchronization events to one.
+ */
 #define ROOM_FILTER "filter={\"room\":{\"timeline\":{\"limit\":1}}}"
+
+/**
+ * URL for the rooms endpoint.
+ */
 #define ROOMS_URL API_URL "/rooms"
+
+/**
+ * URL fragment for the send-message enpoint for a room.
+ */
 #define SEND_URL "/send/m.room.message"
+
+/**
+ * Polling interval for the synchronization request.
+ */
+#define SYNC_INTERVAL_MS_STR "30000"
+
+/**
+ * Sets the polling interval to \ref SYNC_INTERVAL_MS_STR.
+ */
 #define TIMEOUT_PARAM "timeout=" SYNC_INTERVAL_MS_STR
+
+/**
+ * Prepends the server and appends the token from the configuration.
+ * \param c Pointer to a \ref mtrix_config object.
+ */
 #define URL_PARTS(c, ...) c->server, __VA_ARGS__, "access_token=", c->token
-#define BUILD_MATRIX_URL(c, url, ...) \
-    BUILD_URL(url, URL_PARTS(config, __VA_ARGS__))
 
-const char *PROG_NAME = NULL, *CMD_NAME = NULL;
+/**
+ * Builds a URL using \ref URL_PARTS.
+ */
+#define BUILD_MATRIX_URL(c, url, ...) BUILD_URL(url, URL_PARTS(c, __VA_ARGS__))
 
+/**
+ * To be filled by `argv[0]` later, for logging.
+ */
+const char *PROG_NAME = NULL;
+
+/**
+ * Always null.
+ */
+const char *CMD_NAME = NULL;
+
+/**
+ * Program entry point.
+ */
 int main(int argc, char *const *argv);
+
+/**
+ * Parses command-line arguments and fills `config`.
+ */
 static bool parse_args(int *argc, char *const **argv, mtrix_config *config);
+
+/**
+ * Prints a usage message.
+ */
 static void usage(FILE *f);
+
+/**
+ * Extracts the short user name from a `@user:server` string.
+ */
 static bool short_username(const char *user, char *out);
+
+/**
+ * Reads the token from a file.
+ * \param token Name of the file.  Replaced with the contents of the token.
+ * \param max Maximum length for `token`, including the null terminator.
+ */
 static bool read_token(char *token, size_t max);
+
+/**
+ * Shortcut for `cJSON_GetObjectItemCaseSensitive.
+ */
 static cJSON *get_item(const cJSON *j, const char *k);
-static bool initial_sync_url(const mtrix_config *config, char *url);
-static bool send_url(const mtrix_config *config, char *url, const char *room);
+
+/**
+ * Fetches the inital batch for synchronization.
+ */
 static bool init_batch(const mtrix_config *config, char *batch);
+
+/**
+ * Extracts the next batch from a server response.
+ */
 static bool get_next_batch(cJSON *j, char *batch);
+
+/**
+ * Main request/response loop.
+ */
 static bool loop(const mtrix_config *config, char *batch);
-static cJSON *parse_request(const char *r);
+
+/**
+ * Parses a string as JSON.
+ */
+static cJSON *parse_json(const char *s);
+
+/**
+ * Handles a single request.
+ */
 static void
 handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
+
+/**
+ * Checks that an event has the expected type.
+ */
 static bool check_event_type(const cJSON *event, const char *value);
+
+/**
+ * Finds the event body, if it contains one.
+ */
 static const char *event_body(const cJSON *event);
-static const char *event_sender(const cJSON *event, const char *user);
+
+/**
+ * Finds the event sender, if it contains one.
+ */
+static const char *event_sender(const cJSON *event);
+
+/**
+ * Checks if the a user was mentioned.
+ */
 static bool check_mention(const char *text, const char *user);
+
+/**
+ * Invokes the main program and sends a reply to the room.
+ */
 static bool
 reply(const mtrix_config *config, const char *room, const char *input);
+
+/**
+ * Sends a message to the room.
+ */
 static bool
 send_msg(const mtrix_config *config, const char *room, const char *msg);
 
@@ -209,18 +322,10 @@ bool read_token(char *token, size_t max) {
     return ret;
 }
 
-// TODO use Authorization header
-bool initial_sync_url(const mtrix_config *config, char *url) {
-    return BUILD_MATRIX_URL(config, url, SYNC_URL "?" ROOM_FILTER "&");
-}
-
-bool send_url(const mtrix_config *config, char *url, const char *room) {
-    return BUILD_MATRIX_URL(config, url, ROOMS_URL "/", room, SEND_URL "?");
-}
-
 bool init_batch(const mtrix_config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
-    if(!initial_sync_url(config, url))
+    // TODO use Authorization header
+    if(!BUILD_MATRIX_URL(config, url, SYNC_URL "?" ROOM_FILTER "&"))
         return false;
     mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, config->verbose)) {
@@ -277,7 +382,7 @@ bool loop(const mtrix_config *config, char *batch) {
         buffer.s = 0;
         if(!request(url, &buffer, config->verbose))
             break;
-        if(!(req = parse_request(buffer.p)))
+        if(!(req = parse_json(buffer.p)))
             break;
         if(!get_next_batch(req, batch))
             break;
@@ -303,7 +408,7 @@ void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
             const char *const text = event_body(event);
             if(!text)
                 continue;
-            const char *const sender = event_sender(event, config->user);
+            const char *const sender = event_sender(event);
             if(!sender) {
                 if(config->verbose)
                     printf("Skipping message without sender: %s\n", text);
@@ -327,8 +432,8 @@ void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
     }
 }
 
-cJSON *parse_request(const char *r) {
-    cJSON *const j = cJSON_Parse(r);
+cJSON *parse_json(const char *s) {
+    cJSON *const j = cJSON_Parse(s);
     if(!j) {
         const char *err = cJSON_GetErrorPtr();
         if(err)
@@ -353,7 +458,7 @@ const char *event_body(const cJSON *event) {
     return (body && cJSON_IsString(body)) ? body->valuestring : NULL;
 }
 
-const char *event_sender(const cJSON *event, const char *user) {
+const char *event_sender(const cJSON *event) {
     const cJSON *const j = get_item(event, "sender");
     return (cJSON_IsString(j) && j->valuestring) ? j->valuestring : NULL;
 }
@@ -431,7 +536,7 @@ cleanup:
 
 bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
     char url[MTRIX_MAX_URL_LEN];
-    if(!send_url(config, url, room))
+    if(!BUILD_MATRIX_URL(config, url, ROOMS_URL "/", room, SEND_URL "?"))
         return false;
     cJSON *msg_json = cJSON_CreateObject();
     cJSON_AddItemToObject(msg_json, "msgtype", cJSON_CreateString("m.text"));

@@ -11,7 +11,7 @@ sources = \
 	dlpo.c html.c main.c matrix.c utils.c wikt.c \
 	tests/html.c tests/utils.c
 
-.PHONY: all check clean format tidy
+.PHONY: all check clean docs format tidy
 all: machinatrix machinatrix_matrix
 machinatrix: dlpo.o html.o main.o utils.o wikt.o
 machinatrix_matrix: matrix.o utils.o
@@ -21,6 +21,8 @@ machinatrix machinatrix_matrix:
 tests/html: html.o utils.o tests/html.o
 tests/utils: utils.o tests/utils.o
 
+docs:
+	doxygen
 format:
 	for x in $(headers) $(sources); do clang-format -i "$$x"; done
 tidy:
@@ -37,5 +39,6 @@ clean:
 	rm -f \
 		machinatrix machinatrix_matrix *.d *.o \
 		$(TESTS) tests/*.d tests/*.o
+	rm -rf docs/html docs/latex
 -include $(wildcard *.d)
 -include $(wildcard tests/*.d)
