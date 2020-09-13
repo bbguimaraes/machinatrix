@@ -60,8 +60,7 @@ mtrix_cmd COMMANDS[] = {
 int main(int argc, const char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
-    mtrix_config config;
-    init_config(&config);
+    mtrix_config config = {0};
     if(!parse_args(argc, (char *const **)&argv, &config))
         return 1;
     if(config.help) {
