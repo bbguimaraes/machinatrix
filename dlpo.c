@@ -10,8 +10,8 @@ TidyNode dlpo_find_definitions(TidyNode node) {
         log_err("no children\n");
         return NULL;
     }
-    if(tidyGetNext(node)) {
-        log_err("more than one child\n");
+    if(!(node = tidyGetNext(node))) {
+        log_err("only one child\n");
         return NULL;
     }
     if(!(node = tidyGetChild(node))) {
@@ -30,10 +30,16 @@ bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node) {
         node = find_node_by_name(node, "br");
         if(!node)
             return true;
-        node = tidyGetNext(node);
-        if(!node) {
+        if(!(node = tidyGetNext(node))) {
             log_err("definition not found\n");
             return false;
+        }
+        if(strcmp(tidyNodeGetName(node), "div") != 0)
+            continue;
+        {
+            TidyAttr id = find_attr(node, "id");
+            if(id && strncmp(tidyAttrValue(id), "aa", 2) == 0)
+                continue;
         }
         TidyNode child = node;
         for(size_t i = 0; i < 4; ++i) {
@@ -46,7 +52,8 @@ bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node) {
         {
             TidyBuffer buf = {0};
             tidyNodeGetText(doc, child, &buf);
-            fprintf(f, "- %s", buf.bp);
+            fprintf(f, "- ");
+            print_unescaped(f, buf.bp);
             tidyBufFree(&buf);
         }
         child = tidyGetNext(tidyGetChild(node));
@@ -60,13 +67,10 @@ bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node) {
                     continue;
                 TidyBuffer buf = {0};
                 tidyNodeGetText(doc, child, &buf);
-                unsigned char *b = buf.bp;
-                unsigned char *e = buf.bp + buf.size - 1;
-                const unsigned char **cb = (const unsigned char **)&b;
-                const unsigned char **ce = (const unsigned char **)&e;
-                trim_tag(cb, ce);
-                join_lines(b, e);
-                fprintf(f, "  %.*s\n", (int)(e - b), b);
+                join_lines(buf.bp, buf.bp + buf.size);
+                fprintf(f, "  ");
+                print_unescaped(f, buf.bp);
+                fprintf(f, "\n");
                 tidyBufFree(&buf);
                 break;
             }
