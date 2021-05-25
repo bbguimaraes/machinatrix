@@ -15,6 +15,7 @@ Current supported commands:
 - `wikt <term>`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
 - `tr`: translate word (Wiktionary)
+- `stats`: print statistics
 
 ## building
 

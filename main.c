@@ -41,6 +41,8 @@ const char *CMD_NAME = NULL;
  */
 #define DICT_FILE "/usr/share/dict/words"
 
+#define STATS_FILE "stats"
+
 /**
  * Function that handles a command.
  */
@@ -59,6 +61,8 @@ typedef struct {
      */
     mtrix_cmd_f *f;
 } mtrix_cmd;
+
+struct stats { int wikt, dlpo; };
 
 /**
  * Program entry point.
@@ -156,6 +160,17 @@ static bool cmd_tr(
     const struct mtrix_config *config, const char *const *argv);
 
 /**
+ * Implements the `stats` command.
+ */
+static bool cmd_stats(
+    const struct mtrix_config *config, const char *const *argv);
+
+/**
+ * Increments the count on wikt and dlpo lookups.
+ */
+static bool increment_stats();
+
+/**
  * Maps a command name to the function that handles it.
  * Terminated by a `{NULL, NULL}` entry.
  */
@@ -171,6 +186,7 @@ mtrix_cmd COMMANDS[] = {
     {"dlpo", cmd_dlpo},
     {"wikt", cmd_wikt},
     {"tr", cmd_tr},
+    {"stats", cmd_stats},
     {NULL, NULL},
 };
 // clang-format on
@@ -231,7 +247,8 @@ void usage(FILE *f) {
         "    dlpo <term>:           lookup etymology (DLPO)\n"
         "    wikt <term>:           lookup etymology (Wiktionary)\n"
         "    parl:                  use unparliamentary language\n"
-        "    tr <term>:             lookup translation (Wiktionary)\n",
+        "    tr <term>:             lookup translation (Wiktionary)\n"
+        "    stats:                 print statistics\n",
         PROG_NAME);
 }
 
@@ -716,6 +733,7 @@ bool cmd_dlpo(const struct mtrix_config *config, const char *const *argv) {
         goto cleanup;
     dlpo_print_definitions(stdout, tidy_doc, def);
     ret = true;
+    increment_stats(0);
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
@@ -766,6 +784,7 @@ bool cmd_wikt(const struct mtrix_config *config, const char *const *argv) {
         lang = sect;
     }
     ret = true;
+    increment_stats(1);
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
@@ -838,4 +857,41 @@ bool cmd_tr(const struct mtrix_config *config, const char *const *argv) {
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
+}
+
+bool increment_stats(int opt) {
+    FILE *f = fopen(STATS_FILE, "a");
+    if(!f && errno != ENOENT)
+        return log_errno("failed to create " STATS_FILE), false;
+    if(fclose(f) == -1)
+        return log_errno("failed to close " STATS_FILE), false;
+    if(!(f = fopen(STATS_FILE, "r+")))
+        return log_errno("failed to open " STATS_FILE), false;
+    struct stats s = {0};
+    fread(&s, sizeof(s), 1, f);
+    if(ferror(f))
+        return log_errno("failed to read stats"), false;
+    opt ? s.wikt++ : s.dlpo++;
+    rewind(f);
+    if(fwrite(&s, sizeof(s), 1, f) != 1)
+        return log_errno("failed to write stats"), false;
+    if(fclose(f) == -1)
+        return log_errno("failed to close " STATS_FILE), false;
+    return true;
+}
+
+bool cmd_stats(const struct mtrix_config *config, const char *const *argv) {
+    (void)config;
+    if(*argv)
+        return log_err("command accepts no argument\n"), false;
+    FILE *const f = fopen(STATS_FILE, "r");
+    if(!f)
+        return log_errno("failed to open " STATS_FILE), false;
+    struct stats s = {0};
+    if(fread(&s, sizeof(s), 1, f) != 1)
+        return log_errno("failed to read stats"), false;
+    if(fclose(f) == -1)
+        return log_errno("failed to close " STATS_FILE), false;
+    printf("Total lookups\n  wikt: %d\n  dlpo: %d\n", s.wikt, s.dlpo);
+    return true;
 }
