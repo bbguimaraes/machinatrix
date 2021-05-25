@@ -6,9 +6,12 @@
 
 #include <curl/curl.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
+#include "common.h"
+
 #include <tidy.h>
 #include <tidybuffio.h>
-#include <unistd.h>
 
 #include "utils.h"
 
