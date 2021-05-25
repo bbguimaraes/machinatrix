@@ -5,6 +5,8 @@
  */
 #include <stdbool.h>
 
+#include "common.h"
+
 #include <tidy.h>
 
 /**
