@@ -101,11 +101,15 @@ static bool test_exec() {
 static bool test_exec_output() {
     log_set(stderr);
     const char *argv[] = {"sh", "-c", "echo stdout && exec cat", NULL};
-    struct {
-        int child_read, parent_write, parent_read, child_write;
+    union {
+        int p[4];
+        struct {
+            int child_read, parent_write, parent_read, child_write;
+        };
     } fds;
-    assert(pipe(&fds.child_read) == 0);
-    assert(pipe(&fds.parent_read) == 0);
+    static_assert(sizeof(fds) == 4 * sizeof(int));
+    assert(pipe(fds.p) == 0);
+    assert(pipe(fds.p + 2) == 0);
     const pid_t pid = fork();
     assert(pid != -1);
     if(!pid) {
