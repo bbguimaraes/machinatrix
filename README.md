@@ -26,6 +26,15 @@ following libraries (tested versions in parentheses):
 - tidy-html5 (5.6.0)
 - cjson (1.7.10)
 
+[`premake`](https://premake.github.io) is used to generate build files.  See
+`premake5 --help` for all build options.  For a simple in-tree build, execute:
+
+```
+$ premake5 gmake2
+$ make -C build
+$ build/bin/debug/machinatrix
+```
+
 ## running
 
 The main program, `machinatrix`, is responsible for executing the commands and
