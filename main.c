@@ -9,8 +9,11 @@
 
 #include <getopt.h>
 #include <sys/wait.h>
-#include <tidybuffio.h>
 #include <unistd.h>
+
+#include "common.h"
+
+#include <tidybuffio.h>
 
 #include "config.h"
 #include "dlpo.h"

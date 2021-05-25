@@ -9,9 +9,11 @@
 #include <string.h>
 #include <time.h>
 
-#include <cjson/cJSON.h>
 #include <getopt.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+#include <cjson/cJSON.h>
 
 #include "config.h"
 #include "utils.h"
