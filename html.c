@@ -56,13 +56,14 @@ static void *memrchr(const void *p, int c, size_t n) {
 
 void trim_tag(const unsigned char **pb, const unsigned char **pe) {
     const unsigned char *b = *pb, *e = *pe;
+    assert(b <= e);
     if(*b == '<') {
-        const unsigned char *n = memchr(b, '>', e - b);
+        const unsigned char *n = memchr(b, '>', (size_t)(e - b));
         if(n)
             b = n + 1;
     }
     if(*(e - 1) == '>') {
-        const unsigned char *n = memrchr(b, '<', e - b - 1);
+        const unsigned char *n = memrchr(b, '<', (size_t)(e - b - 1));
         if(n)
             e = n;
     }

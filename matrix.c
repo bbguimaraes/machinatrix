@@ -285,7 +285,8 @@ bool short_username(const char *user, char *out) {
         log_err("user missing \":\" character\n");
         return false;
     }
-    memcpy(out, user, colon - user);
+    assert(user <= colon);
+    memcpy(out, user, (size_t)(colon - user));
     return true;
 }
 
@@ -515,7 +516,7 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
         ssize_t len;
         if((len = getline(&buffer, &buffer_len, child_out)) == -1)
             break;
-        mtrix_buffer_append(buffer, 1, len, &msg);
+        mtrix_buffer_append(buffer, 1, (size_t)len, &msg);
     }
     if(buffer)
         free(buffer);
