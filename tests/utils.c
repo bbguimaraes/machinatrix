@@ -107,7 +107,7 @@ static bool test_exec_output() {
             int child_read, parent_write, parent_read, child_write;
         };
     } fds;
-    static_assert(sizeof(fds) == 4 * sizeof(int));
+    static_assert(sizeof(fds) == 4 * sizeof(int), "unexpected padding");
     assert(pipe(fds.p) == 0);
     assert(pipe(fds.p + 2) == 0);
     const pid_t pid = fork();
