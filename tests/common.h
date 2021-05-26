@@ -9,7 +9,7 @@
 #define ASSERT_NE(x, y) ((x) != (y) || FAIL(-1, #x " != " #y, NULL))
 #define ASSERT_STR_EQ(x, y) ((strcmp((x), (y)) == 0) || FAIL(-1, (x), (y)))
 #define ASSERT_STR_EQ_N(x, y, n) \
-    ((strncmp((x), (y), (n)) == 0) || FAIL((n), (x), (y)))
+    ((strncmp((x), (y), (n)) == 0) || FAIL((int)(n), (x), (y)))
 #define CHECK_LOG(x) check_log(LOC(), (x))
 
 struct loc {
@@ -48,11 +48,11 @@ static inline bool check_log(struct loc loc, const char *s) {
     FILE *f = log_set(NULL);
     log_set(f);
     assert(fflush(f) != EOF);
-    size_t n = ftell(f);
+    long n = ftell(f);
     assert(n > 0);
     assert(fseek(f, 0, SEEK_SET) >= 0);
-    char *text = malloc(n);
-    fread(text, 1, n, f);
+    char *text = malloc((size_t)n);
+    fread(text, 1, (size_t)n, f);
     assert(!ferror(f));
     const bool ret = strncmp(text, s, strlen(s) - 1) == 0;
     if(!ret) {
