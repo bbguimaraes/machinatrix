@@ -1,6 +1,5 @@
-CPPFLAGS += -I. -isystem deps/include/ -D_POSIX_C_SOURCE=200809L
+CPPFLAGS += -I. -D_POSIX_C_SOURCE=200809L
 CFLAGS += -std=c11 -g -Wall -pedantic
-LDFLAGS += -L deps/lib/
 LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 TESTS += tests/html tests/utils
