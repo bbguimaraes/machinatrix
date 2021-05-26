@@ -117,7 +117,8 @@ void join_lines(unsigned char *b, unsigned char *e) {
 
 size_t curl_write_cb(char *in, size_t size, size_t nmemb, TidyBuffer *out) {
     size_t r = size * nmemb;
-    tidyBufAppend(out, in, r);
+    assert(r <= UINT_MAX);
+    tidyBufAppend(out, in, (unsigned)r);
     return r;
 }
 
@@ -147,15 +148,17 @@ bool build_url(char *url, const char *const *v) {
     size_t m = MTRIX_MAX_URL_LEN;
     char *p = url;
     for(; *v; ++v) {
-        int l = snprintf(p, m, "%s", *v);
+        const int l = snprintf(p, m, "%s", *v);
         if(l < 0) {
             log_err("build_url: snprintf: %s", strerror(errno));
             return false;
-        } else if((size_t)l >= m) {
+        }
+        const size_t ul = (size_t)l;
+        if(ul >= m) {
             log_err("url too long (%zu >= %zu): %s\n", l, m, url);
             return false;
         }
-        m -= l;
+        m -= ul;
         p += l;
     }
     return true;

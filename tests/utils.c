@@ -131,8 +131,8 @@ static bool test_exec_output() {
     const char expected[] = "stdout\nstdin\n";
     char output[sizeof(expected)];
     const size_t n_read = sizeof(expected) - 1;
-    size_t n = read(fds.parent_read, output, n_read);
-    ret = ASSERT_EQ(n, n_read) && ret;
+    const ssize_t n = read(fds.parent_read, output, n_read);
+    ret = ASSERT_EQ(n, (ssize_t)n_read) && ret;
     ret = ASSERT_STR_EQ_N(output, expected, sizeof(expected) - 1) && ret;
     ret = ASSERT_EQ(read(fds.parent_read, output, n_read), 0) && ret;
     assert(close(fds.parent_read) == 0);

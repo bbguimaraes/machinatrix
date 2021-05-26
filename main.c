@@ -530,8 +530,8 @@ bool cmd_parl(const mtrix_config *config, const char *const *argv) {
         "Incapable.\n-- United Kingdom\n",
     };
     static const size_t n = sizeof(v) / sizeof(*v);
-    srand(time(NULL));
-    printf("%s", v[rand() % n]);
+    srand((unsigned)time(NULL));
+    printf("%s", v[(size_t)rand() % n]);
     return true;
 }
 
@@ -664,8 +664,8 @@ bool cmd_bard(const mtrix_config *config, const char *const *argv) {
         "-- Titus Andronicus (Act 4, Scene 2)\n",
     };
     static const size_t n = sizeof(v) / sizeof(*v);
-    srand(time(NULL));
-    printf("%s", v[rand() % n]);
+    srand((unsigned)time(NULL));
+    printf("%s", v[(size_t)rand() % n]);
     return true;
 }
 

@@ -117,7 +117,7 @@ static bool test_trim_tag() {
         assert(fflush(stdout) == 0);
         const char *e = t[i].in + t[i].in_len;
         trim_tag((const unsigned char **)&t[i].in, (const unsigned char **)&e);
-        const size_t n = e - t[i].in;
+        const size_t n = (size_t)(e - t[i].in);
         const bool iret = ASSERT_STR_EQ_N(t[i].in, t[i].out, n);
         if(!iret)
             printf("fail ");
@@ -139,7 +139,7 @@ static bool test_print_unescaped() {
     assert(fseek(out, 0, SEEK_SET) >= 0);
     const char expected[] = "A paragraph of text with several HTML tags.";
     bool ret = ASSERT_EQ((size_t)n, sizeof(expected) - 1);
-    ret = ASSERT_EQ(fread(buf, 1, n, out), (size_t)n) && ret;
+    ret = ASSERT_EQ(fread(buf, 1, (size_t)n, out), (size_t)n) && ret;
     buf[n] = 0;
     ret = ASSERT_STR_EQ(buf, expected) && ret;
     return ret;
