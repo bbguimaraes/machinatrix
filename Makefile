@@ -1,26 +1,34 @@
-CPPFLAGS += -I. -D_POSIX_C_SOURCE=200809L
-CFLAGS += -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion
+CPPFLAGS += -I. -Isrc -D_POSIX_C_SOURCE=200809L
+CFLAGS += -std=c11 -O2 -g -Wall -Wextra -Wpedantic -Wconversion
 LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 TESTS += tests/hash tests/html tests/utils
 
 headers = \
-	config.h dlpo.h html.h utils.h wikt.h tests/common.h
+	src/config.h src/dlpo.h src/html.h src/utils.h src/wikt.h tests/common.h
 sources = \
-	dlpo.c html.c main.c matrix.c utils.c wikt.c \
+	src/dlpo.c src/html.c src/main.c src/matrix.c src/utils.c src/wikt.c \
 	tests/html.c tests/utils.c
 
-.PHONY: all check clean docs tidy
+.PHONY: all check clean docs format tidy
 all: machinatrix machinatrix_matrix numeraria
-machinatrix: dlpo.o hash.o html.o main.o numeraria_lib.o socket.o utils.o wikt.o
-machinatrix_matrix: matrix.o utils.o
-numeraria: numeraria.c socket.o utils.o -lsqlite3
+machinatrix: \
+	src/dlpo.o \
+	src/hash.o \
+	src/html.o \
+	src/main.o \
+	src/numeraria_lib.o \
+	src/socket.o \
+	src/utils.o \
+	src/wikt.o
+machinatrix_matrix: src/matrix.o src/utils.o
+numeraria: src/numeraria.o src/socket.o src/utils.o -lsqlite3
 machinatrix machinatrix_matrix numeraria:
 	$(LINK.c) $^ $(LDLIBS) -o $@
 
 tests/hash: tests/hash.o
-tests/html: html.o utils.o tests/common.o tests/html.o
-tests/utils: utils.o tests/common.o tests/utils.o
+tests/html: src/html.o src/utils.o tests/common.o tests/html.o
+tests/utils: src/utils.o tests/common.o tests/utils.o
 
 docs:
 	doxygen
@@ -36,7 +44,7 @@ check: $(TESTS)
 	for x in $(TESTS); do { echo "$$x" && ./"$$x"; } || exit; done
 clean:
 	rm -f \
-		machinatrix machinatrix_matrix numeraria *.d *.o \
+		machinatrix machinatrix_matrix numeraria src/*.d src/*.o \
 		$(TESTS) tests/*.d tests/*.o
 	rm -rf docs/html docs/latex
 -include $(wildcard *.d)
