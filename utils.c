@@ -148,7 +148,10 @@ bool build_url(char *url, const char *const *v) {
     char *p = url;
     for(; *v; ++v) {
         int l = snprintf(p, m, "%s", *v);
-        if(l >= m) {
+        if(l < 0) {
+            log_err("build_url: snprintf: %s", strerror(errno));
+            return false;
+        } else if((size_t)l >= m) {
             log_err("url too long (%zu >= %zu): %s\n", l, m, url);
             return false;
         }

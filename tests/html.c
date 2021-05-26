@@ -133,13 +133,13 @@ static bool test_print_unescaped() {
         "<hr />"
         "<img src=\"test.png\" />";
     print_unescaped(out, (const unsigned char *)buf);
-    const size_t n = ftell(out);
+    const long n = ftell(out);
     assert(n >= 0);
-    assert(n < sizeof(buf));
+    assert((size_t)n < sizeof(buf));
     assert(fseek(out, 0, SEEK_SET) >= 0);
     const char expected[] = "A paragraph of text with several HTML tags.";
-    bool ret = ASSERT_EQ(n, sizeof(expected) - 1);
-    ret = ASSERT_EQ(fread(buf, 1, n, out), n) && ret;
+    bool ret = ASSERT_EQ((size_t)n, sizeof(expected) - 1);
+    ret = ASSERT_EQ(fread(buf, 1, n, out), (size_t)n) && ret;
     buf[n] = 0;
     ret = ASSERT_STR_EQ(buf, expected) && ret;
     return ret;

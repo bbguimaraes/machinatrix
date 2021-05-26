@@ -235,9 +235,9 @@ bool handle_cmd(const mtrix_config *config, const char *const *argv) {
 bool handle_file(const mtrix_config *config, FILE *f) {
     bool ret = true;
     char *buffer = NULL;
+    size_t len = 0;
     for(;;) {
-        size_t len;
-        if((len = getline(&buffer, &len, f)) == -1)
+        if(getline(&buffer, &len, f) == -1)
             break;
         enum { CMD = 1, TERM = 1, ARGV_LEN = CMD + MAX_ARGS + TERM };
         char *argv[ARGV_LEN] = {0};
@@ -273,7 +273,8 @@ void str_to_args(char *str, size_t max_args, char **argv) {
     }
 }
 
-bool cmd_help(const mtrix_config *_, const char *const *argv) {
+bool cmd_help(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
         return false;
@@ -282,7 +283,8 @@ bool cmd_help(const mtrix_config *_, const char *const *argv) {
     return true;
 }
 
-bool cmd_ping(const mtrix_config *_, const char *const *argv) {
+bool cmd_ping(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
         return false;
@@ -291,7 +293,8 @@ bool cmd_ping(const mtrix_config *_, const char *const *argv) {
     return true;
 }
 
-bool cmd_word(const mtrix_config *_, const char *const *argv) {
+bool cmd_word(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
         return false;
@@ -306,11 +309,14 @@ bool cmd_word(const mtrix_config *_, const char *const *argv) {
     return wait_n(1);
 }
 
-bool cmd_abbr(const mtrix_config *_, const char *const *argv) {
+bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(!*argv) {
         log_err("abbr: command requires one argument\n");
         return false;
     }
+    char *buffer = NULL;
+    size_t buffer_len = 0;
     for(const char *c = argv[0]; *c; ++c) {
         int fds[2][2];
         if(pipe(fds[0]) == -1) {
@@ -347,9 +353,8 @@ bool cmd_abbr(const mtrix_config *_, const char *const *argv) {
             log_err("fdopen: %s\n", strerror(errno));
             return false;
         }
-        char *buffer = 0;
-        size_t len;
-        if((len = getline(&buffer, &len, child)) == -1)
+        ssize_t len = 0;
+        if((len = getline(&buffer, &buffer_len, child)) == -1)
             break;
         if(buffer[len - 1] == '\n')
             buffer[len - 1] = '\0';
@@ -361,7 +366,8 @@ bool cmd_abbr(const mtrix_config *_, const char *const *argv) {
     return true;
 }
 
-bool cmd_damn(const mtrix_config *_, const char *const *argv) {
+bool cmd_damn(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     int fds[2];
     if(pipe(fds) == -1) {
         log_err("pipe: %s\n", strerror(errno));
@@ -386,9 +392,10 @@ bool cmd_damn(const mtrix_config *_, const char *const *argv) {
     }
     printf("You");
     char *buffer = 0;
+    size_t buffer_len = 0;
     for(;;) {
-        size_t len;
-        if((len = getline(&buffer, &len, child)) == -1)
+        ssize_t len = 0;
+        if((len = getline(&buffer, &buffer_len, child)) == -1)
             break;
         if(buffer[len - 1] == '\n')
             buffer[len - 1] = '\0';
@@ -400,7 +407,8 @@ bool cmd_damn(const mtrix_config *_, const char *const *argv) {
     return wait_n(1);
 }
 
-bool cmd_parl(const mtrix_config *_, const char *const *argv) {
+bool cmd_parl(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
         return false;
@@ -524,7 +532,8 @@ bool cmd_parl(const mtrix_config *_, const char *const *argv) {
     return true;
 }
 
-bool cmd_bard(const mtrix_config *_, const char *const *argv) {
+bool cmd_bard(const mtrix_config *config, const char *const *argv) {
+    (void)config;
     if(*argv) {
         log_err("command accepts no argument\n");
         return false;
