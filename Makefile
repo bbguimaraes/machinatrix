@@ -1,5 +1,5 @@
 CPPFLAGS += -I. -D_POSIX_C_SOURCE=200809L
-CFLAGS += -std=c11 -g -Wall -pedantic
+CFLAGS += -std=c11 -g -Wall -Wextra -Wpedantic
 LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
 TESTS += tests/html tests/utils

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,7 +122,8 @@ static bool test_exec_output() {
     assert(close(fds.child_write) == 0);
     const char input[] = "stdin\n";
     const size_t n_write = sizeof(input) - 1;
-    assert(write(fds.parent_write, input, n_write) == n_write);
+    assert(n_write < SSIZE_MAX);
+    assert(write(fds.parent_write, input, n_write) == (ssize_t)n_write);
     assert(close(fds.parent_write) == 0);
     int status;
     assert(wait(&status) != -1);

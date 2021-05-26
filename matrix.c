@@ -428,8 +428,9 @@ void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
                     printf("Skipping message: not mentioned\n");
                 continue;
             }
-            if(!reply(config, room->string, text + user_len + 1))
-                ; // TODO
+            if(!reply(config, room->string, text + user_len + 1)) {
+                // TODO
+            }
         }
     }
 }
@@ -509,9 +510,10 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     fclose(child_in);
     child_in = 0;
     char *buffer = 0;
+    size_t buffer_len = 0;
     for(;;) {
-        size_t len;
-        if((len = getline(&buffer, &len, child_out)) == -1)
+        ssize_t len;
+        if((len = getline(&buffer, &buffer_len, child_out)) == -1)
             break;
         mtrix_buffer_append(buffer, 1, len, &msg);
     }
