@@ -1,3 +1,7 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "utils.h"
 
 #define RUN(x) run(#x, (x))
