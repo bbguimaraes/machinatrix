@@ -17,8 +17,8 @@ machinatrix_matrix: matrix.o utils.o
 machinatrix machinatrix_matrix:
 	$(LINK.c) $^ $(LDLIBS) -o $@
 
-tests/html: html.o utils.o tests/html.o
-tests/utils: utils.o tests/utils.o
+tests/html: html.o utils.o tests/common.o tests/html.o
+tests/utils: utils.o tests/common.o tests/utils.o
 
 docs:
 	doxygen
