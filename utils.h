@@ -8,10 +8,18 @@
 /** Maximum path length, arbitrarily chosen. */
 #define MTRIX_MAX_PATH ((size_t)1024U)
 
+/** Maximum unix socket path length, based on Linux's maximum. */
+#define MTRIX_MAX_UNIX_PATH ((size_t)108U)
+
 /**
  * Maximum length for URLs built by \ref build_url.
  */
 #define MTRIX_MAX_URL_LEN ((size_t)1024U)
+
+/**
+ * Maximum number of command arguments (excluding the command name).
+ */
+#define MTRIX_MAX_ARGS ((size_t)1U)
 
 /**
  * Helper macro for \ref build_url that creates a `const char *` array.
