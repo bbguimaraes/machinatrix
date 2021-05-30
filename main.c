@@ -19,12 +19,15 @@
 
 #include "config.h"
 #include "dlpo.h"
+#include "hash.h"
 #include "html.h"
+#include "numeraria.h"
 #include "utils.h"
 #include "wikt.h"
 
 enum {
     MAX_PATH = MTRIX_MAX_PATH,
+    MAX_UNIX_PATH = MTRIX_MAX_UNIX_PATH,
     STATS_WIKT = 0,
     STATS_DLPO = 1,
 };
@@ -32,8 +35,11 @@ enum {
 /** `machinatrix`-specific configuration. */
 struct config {
     struct mtrix_config c;
+    int numeraria_fd;
     struct {
         char stats_file[MAX_PATH];
+        char numeraria_socket[MAX_PATH];
+        char numeraria_unix[MAX_UNIX_PATH];
     } input;
 };
 
@@ -46,11 +52,6 @@ const char *PROG_NAME = NULL;
  * Set while processing a command.
  */
 const char *CMD_NAME = NULL;
-
-/**
- * Maximum number of command arguments (excluding the command name).
- */
-#define MAX_ARGS ((size_t)1U)
 
 /**
  * Dictionary file used for commands that require a list of words.
@@ -92,6 +93,19 @@ static bool parse_args(int argc, char *const **argv, struct config *config);
  * Prints a usage message.
  */
 static void usage(FILE *f);
+
+/** Initializes values in `config`. */
+static void config_init(struct config *config);
+
+/** Initializes values in `config`. */
+static bool config_init_numeraria(struct config *config);
+
+/** Destructs `config`. */
+static bool config_destroy(struct config *config);
+
+/** Records that a command will be executed, along with its arguments. */
+static bool config_record_command(
+    const struct config *config, const char *const *argv);
 
 /**
  * Handles a command passed via the command line.
@@ -172,6 +186,9 @@ static bool stats_increment(const struct config *config, uint8_t opt);
 /** Print stats from local file. */
 static bool stats_file(const struct config *config);
 
+/** Print stats from numeraria. */
+static bool stats_numeraria(const struct config *config);
+
 /**
  * Maps a command name to the function that handles it.
  * Terminated by a `{NULL, NULL}` entry.
@@ -197,23 +214,27 @@ int main(int argc, const char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
     struct config config = {0};
+    config_init(&config);
     if(!parse_args(argc, (char *const **)&argv, &config))
         return 1;
-    if(config.c.help) {
-        usage(stdout);
-        return 0;
-    }
-    return *argv ? !handle_cmd(&config, argv) : !handle_file(&config, stdin);
+    if(config.c.help)
+        return usage(stdout), 0;
+    return !(
+        config_init_numeraria(&config)
+        && (*argv ? handle_cmd(&config, argv) : handle_file(&config, stdin))
+        && config_destroy(&config));
 }
 
 bool parse_args(int argc, char *const **argv, struct config *config) {
-    enum { STATS_FILE };
+    enum { STATS_FILE, NUMERARIA_SOCKET, NUMERARIA_UNIX };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"dry-run", no_argument, 0, 'n'},
         {"stats-file", required_argument, 0, STATS_FILE},
+        {"numeraria-socket", required_argument, 0, NUMERARIA_SOCKET},
+        {"numeraria-unix", required_argument, 0, NUMERARIA_UNIX},
         {0, 0, 0, 0},
     };
     for(;;) {
@@ -230,8 +251,25 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
                     "stats file", config->input.stats_file, optarg, MAX_PATH))
                 return false;
             break;
+        case NUMERARIA_SOCKET:
+            if(!copy_arg(
+                    "numeraria socket", config->input.numeraria_socket,
+                    optarg, MAX_PATH))
+                return false;
+            break;
+        case NUMERARIA_UNIX:
+            if(!copy_arg(
+                    "numeraria unix socket", config->input.numeraria_unix,
+                    optarg, MAX_UNIX_PATH))
+                return false;
+            break;
         default: return false;
         }
+    }
+    if(*config->input.numeraria_socket && *config->input.numeraria_unix) {
+        log_err(
+            "--numeraria-socket and --numeraria-unix are mutually exclusive");
+        return false;
     }
     *argv += optind;
     return true;
@@ -246,6 +284,9 @@ void usage(FILE *f) {
         "    -v, --verbose          verbose output\n"
         "    -n, --dry-run          don't access external services\n"
         "    --stats-file path      path to file where stats are stored\n"
+        "    --numeraria-socket address\n"
+        "                           address to connect to numeraria\n"
+        "    --numeraria-unix path  path to connect to numeraria\n"
         "Commands:\n"
         "    help:                  this help\n"
         "    ping:                  pong\n"
@@ -262,12 +303,39 @@ void usage(FILE *f) {
         PROG_NAME);
 }
 
+void config_init(struct config *config) {
+    config->numeraria_fd = -1;
+}
+
+bool config_init_numeraria(struct config *config) {
+    const char *const socket = config->input.numeraria_socket;
+    const char *const unix = config->input.numeraria_unix;
+    if(*socket) {
+        if((config->numeraria_fd = mtrix_numeraria_init_socket(socket)) == -1)
+            return false;
+    } else if(*unix) {
+        if((config->numeraria_fd = mtrix_numeraria_init_unix(unix)) == -1)
+            return false;
+    }
+    return true;
+}
+
+bool config_destroy(struct config *config) {
+    bool ret = true;
+    if(config->numeraria_fd != -1 && close(config->numeraria_fd) == -1) {
+        log_errno("%s: close numeraria_fd", __func__);
+        ret = false;
+    }
+    return ret;
+}
+
 bool handle_cmd(const struct config *config, const char *const *argv) {
-    const char *name = *argv++;
+    const char *name = *argv;
     for(mtrix_cmd *cmd = COMMANDS; cmd->name; ++cmd)
         if(!strcmp(name, cmd->name)) {
             CMD_NAME = name;
-            return cmd->f(config, argv);
+            return cmd->f(config, argv + 1)
+                && config_record_command(config, argv);
         }
     log_err("unknown command: %s\n", name);
     usage(stderr);
@@ -281,9 +349,9 @@ bool handle_file(const struct config *config, FILE *f) {
     for(;;) {
         if(getline(&buffer, &len, f) == -1)
             break;
-        enum { CMD = 1, TERM = 1, ARGV_LEN = CMD + MAX_ARGS + TERM };
+        enum { CMD = 1, TERM = 1, ARGV_LEN = CMD + MTRIX_MAX_ARGS + TERM };
         char *argv[ARGV_LEN] = {0};
-        str_to_args(buffer, CMD + MAX_ARGS, argv);
+        str_to_args(buffer, CMD + MTRIX_MAX_ARGS, argv);
         if(!*argv)
             continue;
         mtrix_cmd *cmd = COMMANDS;
@@ -295,7 +363,8 @@ bool handle_file(const struct config *config, FILE *f) {
             break;
         }
         CMD_NAME = cmd->name;
-        ret = cmd->f(config, (const char *const *)argv + 1);
+        ret = cmd->f(config, (const char *const *)argv + 1)
+            && config_record_command(config, (const char *const *)argv);
         CMD_NAME = NULL;
         if(!ret)
             break;
@@ -313,6 +382,46 @@ void str_to_args(char *str, size_t max_args, char **argv) {
         argv[n++] = arg;
         arg = strtok_r(NULL, d, &saveptr);
     }
+}
+
+bool config_record_command(
+    const struct config *config, const char *const *argv
+) {
+    if(config->numeraria_fd == -1)
+        return true;
+    size_t n_args = 0, len = sizeof(size_t), arg_len[MTRIX_MAX_ARGS + 1];
+    const char *args[MTRIX_MAX_ARGS + 1] = {0};
+    for(; *argv; ++n_args, ++argv) {
+        const size_t i_len = strlen(*argv);
+        args[n_args] = *argv;
+        arg_len[n_args] = i_len;
+        len += sizeof(size_t) + i_len;
+        if(MTRIX_NUMERARIA_MAX_CMD < len)
+            return log_err("%s: command too long\n", __func__), false;
+    }
+    if(MTRIX_NUMERARIA_MAX_CMD < len)
+        return log_err("%s: command too long\n", __func__), false;
+    union {
+        struct mtrix_numeraria_cmd h;
+        char buffer[MTRIX_NUMERARIA_MAX_PACKET];
+    } header;
+    char *p = header.h.data;
+    memcpy(p, &n_args, sizeof(n_args));
+    p += sizeof(n_args);
+    for(size_t i = 0; i < n_args; ++i) {
+        memcpy(p, &arg_len[i], sizeof(arg_len[i]));
+        p += sizeof(arg_len[i]);
+        memcpy(p, args[i], arg_len[i]);
+        p += arg_len[i];
+    }
+    header.h.cmd = MTRIX_NUMERARIA_CMD_RECORD_CMD;
+    header.h.len = (uint32_t)len;
+    char ret;
+    return write_all(
+            config->numeraria_fd, &header,
+            MTRIX_NUMERARIA_CMD_SIZE + header.h.len)
+        && read_all(config->numeraria_fd, &ret, sizeof(ret))
+        && ret == 0;
 }
 
 bool cmd_help(const struct config *config, const char *const *argv) {
@@ -906,7 +1015,7 @@ bool cmd_stats(const struct config *config, const char *const *argv) {
     (void)config;
     if(*argv)
         return log_err("command accepts no argument\n"), false;
-    return stats_file(config);
+    return stats_file(config) && stats_numeraria(config);
 }
 
 bool stats_file(const struct config *config) {
@@ -924,6 +1033,39 @@ bool stats_file(const struct config *config) {
         if(fclose(f) == -1)
             return log_errno("%s: close", __func__), false;
     }
-    printf("Total lookups\n  wikt: %d\n  dlpo: %d\n", s.wikt, s.dlpo);
+    printf("file\n  wikt: %d\n  dlpo: %d\n", s.wikt, s.dlpo);
+    return true;
+}
+
+bool stats_numeraria(const struct config *config) {
+    if(config->numeraria_fd == -1)
+        return true;
+    printf("numeraria\n");
+    const struct mtrix_numeraria_cmd header =
+        {.cmd = MTRIX_NUMERARIA_CMD_STATS};
+    if(!write_all(config->numeraria_fd, &header, MTRIX_NUMERARIA_CMD_SIZE))
+        return log_err("failed to send numeraria command\n"), false;
+    for(;;) {
+        size_t n_cols = 0;
+        if(!read_all(config->numeraria_fd, &n_cols, sizeof(n_cols)))
+            return log_err("failed to read numeraria columns\n"), false;
+        if(!n_cols)
+            break;
+        for(size_t i = 0; i < n_cols; ++i) {
+            size_t len = 0;
+            if(!read_all(config->numeraria_fd, &len, sizeof(len))) {
+                log_err("failed to read numeraria result length\n");
+                return false;
+            }
+            char buffer[MTRIX_NUMERARIA_MAX_CMD];
+            if(len && !read_all(config->numeraria_fd, buffer, len))
+                return log_err("failed to read numeraria result\n"), false;
+            if(i)
+                printf(" \"%.*s\"", (int)len, buffer);
+            else
+                printf("  %.*s", (int)len, buffer);
+        }
+        printf("\n");
+    }
     return true;
 }

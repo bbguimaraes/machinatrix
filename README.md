@@ -48,3 +48,26 @@ commands.
         --server matrix.example.com \
         --user @machinatrix:matrix.example.com \
         --token /path/to/token_file
+
+Arguments after `--`, if present, are forwarded to `machinatrix`.
+
+## numeraria
+
+`numeraria` is an optional statistics database service.  It uses an SQLite
+database to record commands.
+
+    $ ./numeraria --db-path numeraria.sqlite --bind-unix numeraria.sock &
+    $ ./machinatrix --numeraria-unix numeraria.sock
+    ping
+    pong
+    ping
+    pong
+    stats
+    numeraria
+      2 "ping" ""
+
+To use with `machinatrix_matrix`, use the extra `machinatrix` arguments:
+
+    $ ./machinatrix_matrix \
+        # regular arguments \
+        -- --numeraria-unix numeraria.sock
