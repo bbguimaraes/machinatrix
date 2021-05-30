@@ -11,10 +11,11 @@ sources = \
 	tests/html.c tests/utils.c
 
 .PHONY: all check clean docs tidy
-all: machinatrix machinatrix_matrix
-machinatrix: dlpo.o html.o main.o utils.o wikt.o
+all: machinatrix machinatrix_matrix numeraria
+machinatrix: dlpo.o hash.o html.o main.o numeraria_lib.o socket.o utils.o wikt.o
 machinatrix_matrix: matrix.o utils.o
-machinatrix machinatrix_matrix:
+numeraria: numeraria.c socket.o utils.o -lsqlite3
+machinatrix machinatrix_matrix numeraria:
 	$(LINK.c) $^ $(LDLIBS) -o $@
 
 tests/hash: tests/hash.o
@@ -35,7 +36,7 @@ check: $(TESTS)
 	for x in $(TESTS); do { echo "$$x" && ./"$$x"; } || exit; done
 clean:
 	rm -f \
-		machinatrix machinatrix_matrix *.d *.o \
+		machinatrix machinatrix_matrix numeraria *.d *.o \
 		$(TESTS) tests/*.d tests/*.o
 	rm -rf docs/html docs/latex
 -include $(wildcard *.d)
