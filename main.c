@@ -301,7 +301,7 @@ bool cmd_word(const mtrix_config *config, const char *const *argv) {
     }
     pid_t pid = fork();
     if(pid == -1) {
-        log_err("fork: %s\n", strerror(errno));
+        log_errno("fork");
         return false;
     }
     if(!pid)
@@ -320,12 +320,12 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
     for(const char *c = argv[0]; *c; ++c) {
         int fds[2][2];
         if(pipe(fds[0]) == -1) {
-            log_err("pipe: %s\n", strerror(errno));
+            log_errno("pipe");
             return false;
         }
         pid_t pid0 = fork();
         if(pid0 == -1) {
-            log_err("fork: %s\n", strerror(errno));
+            log_errno("fork");
             return false;
         }
         if(!pid0) {
@@ -337,7 +337,7 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
         }
         close(fds[0][1]);
         if(pipe(fds[1]) == -1) {
-            log_err("pipe: %s\n", strerror(errno));
+            log_errno("pipe");
             return false;
         }
         pid_t pid1 = fork();
@@ -350,7 +350,7 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
         close(fds[1][1]);
         FILE *child = fdopen(fds[1][0], "r");
         if(!child) {
-            log_err("fdopen: %s\n", strerror(errno));
+            log_errno("fdopen");
             return false;
         }
         ssize_t len = 0;
@@ -370,12 +370,12 @@ bool cmd_damn(const mtrix_config *config, const char *const *argv) {
     (void)config;
     int fds[2];
     if(pipe(fds) == -1) {
-        log_err("pipe: %s\n", strerror(errno));
+        log_errno("pipe");
         return false;
     }
     pid_t pid = fork();
     if(pid == -1) {
-        log_err("fork: %s\n", strerror(errno));
+        log_errno("fork");
         return false;
     }
     if(!pid) {
@@ -387,7 +387,7 @@ bool cmd_damn(const mtrix_config *config, const char *const *argv) {
     close(fds[1]);
     FILE *child = fdopen(fds[0], "r");
     if(!child) {
-        log_err("fdopen: %s\n", strerror(errno));
+        log_errno("fdopen");
         return false;
     }
     printf("You");

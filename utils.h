@@ -37,6 +37,13 @@ FILE *log_set(FILE *f);
 void log_err(const char *fmt, ...);
 
 /**
+ * Similar to \ref log_err, but also logs `strerror(errno)`.
+ * `: %s\n` is appended, where `%s` is the result of `strerror(errno)`.  `errno`
+ * is cleared.
+ */
+void log_errno(const char *fmt, ...);
+
+/**
  * Checks if a string has a certain prefix.
  * \return The first character after the prefix or `NULL` if not a prefix.
  */
