@@ -23,15 +23,28 @@ FILE *log_set(FILE *f) {
     return ret;
 }
 
-void log_err(const char *fmt, ...) {
+static void log_errv(const char *fmt, va_list argp) {
     if(PROG_NAME)
         fprintf(LOG_OUT, "%s: ", PROG_NAME);
     if(CMD_NAME)
         fprintf(LOG_OUT, "%s: ", CMD_NAME);
+    vfprintf(LOG_OUT, fmt, argp);
+}
+
+void log_err(const char *fmt, ...) {
     va_list argp;
     va_start(argp, fmt);
-    vfprintf(LOG_OUT, fmt, argp);
+    log_errv(fmt, argp);
     va_end(argp);
+}
+
+void log_errno(const char *fmt, ...) {
+    va_list argp;
+    va_start(argp, fmt);
+    log_errv(fmt, argp);
+    va_end(argp);
+    fprintf(LOG_OUT, ": %s\n", strerror(errno));
+    errno = 0;
 }
 
 char *is_prefix(const char *prefix, const char *s) {
@@ -64,7 +77,7 @@ bool exec(const char *const *argv, int fin, int fout) {
                 break;
             if(errno == EINTR)
                 continue;
-            log_err("dup2: %s\n", strerror(errno));
+            log_errno("dup2");
             return false;
         }
         close(fin);
@@ -75,14 +88,14 @@ bool exec(const char *const *argv, int fin, int fout) {
                 break;
             if(errno == EINTR)
                 continue;
-            log_err("dup2: %s\n", strerror(errno));
+            log_errno("dup2");
             return false;
         }
         close(fout);
     }
     if(execvp(argv[0], (char *const *)argv) != -1)
         return true;
-    log_err("execvp: %s\n", strerror(errno));
+    log_errno("execvp");
     return false;
 }
 
@@ -92,7 +105,7 @@ bool wait_n(size_t n) {
         int status;
         pid_t w = wait(&status);
         if(w == -1) {
-            log_err("wait: %s\n", strerror(errno));
+            log_errno("wait");
             ret = false;
         } else if(WIFSIGNALED(status)) {
             --n;
@@ -150,7 +163,7 @@ bool build_url(char *url, const char *const *v) {
     for(; *v; ++v) {
         const int l = snprintf(p, m, "%s", *v);
         if(l < 0) {
-            log_err("build_url: snprintf: %s", strerror(errno));
+            log_err("build_url: snprintf");
             return false;
         }
         const size_t ul = (size_t)l;
