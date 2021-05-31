@@ -14,7 +14,8 @@
 #define ASSERT_STR_EQ(x, y) ((strcmp((x), (y)) == 0) || FAIL(-1, (x), (y)))
 #define ASSERT_STR_EQ_N(x, y, n) \
     ((strncmp((x), (y), (n)) == 0) || FAIL((int)(n), (x), (y)))
-#define CHECK_LOG(x) check_log(LOC(), (x))
+#define CHECK_LOG(x) check_log(LOC(), (x), 0)
+#define CHECK_LOG_N(x, n) check_log(LOC(), (x), (n))
 
 struct loc {
     const char *file, *func;
@@ -48,20 +49,24 @@ static inline bool fail(int n, const char *s0, const char *s1) {
     return false;
 }
 
-static inline bool check_log(struct loc loc, const char *s) {
+static inline bool check_log(struct loc loc, const char *s, size_t len) {
     FILE *f = log_set(NULL);
     log_set(f);
     assert(fflush(f) != EOF);
-    long n = ftell(f);
-    assert(n > 0);
+    long log_len = ftell(f);
+    assert(log_len > 0);
     assert(fseek(f, 0, SEEK_SET) >= 0);
-    char *text = malloc((size_t)n);
-    fread(text, 1, (size_t)n, f);
+    char *text = malloc((size_t)log_len);
+    fread(text, 1, (size_t)log_len, f);
     assert(!ferror(f));
-    const bool ret = strncmp(text, s, strlen(s) - 1) == 0;
+    size_t check_len = len ? len : strlen(s);
+    size_t min_len = check_len <= (size_t)log_len ? check_len : (size_t)log_len;
+    const bool ret =
+        strncmp(text, s, min_len) == 0
+        && (len || (size_t)log_len == check_len);
     if(!ret) {
         print_loc(loc);
-        fprintf(stderr, "unexpected log output: %.*s", (int)n, text);
+        fprintf(stderr, "unexpected log output: %.*s", (int)log_len, text);
     }
     free(text);
     return ret;

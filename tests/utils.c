@@ -213,15 +213,13 @@ static bool test_mtrix_buffer_append() {
 
 static bool test_build_url_too_long() {
     log_set(tmpfile());
-    char *buf = malloc(MTRIX_MAX_URL_LEN * 2);
-    char *input = malloc(MTRIX_MAX_URL_LEN + 1);
-    memset(input, 1, MTRIX_MAX_URL_LEN);
-    input[MTRIX_MAX_URL_LEN] = 0;
+    char buf[MTRIX_MAX_URL_LEN * 2], input[MTRIX_MAX_URL_LEN + 1];
+    memset(input, '_', sizeof(input) - 1);
+    input[sizeof(input) - 1] = 0;
     const char *parts[] = {input, input, NULL};
-    bool ret = !build_url(buf, parts);
-    free(input);
-    free(buf);
-    return CHECK_LOG("url too long (1024 >= 1024): \n") && ret;
+    const char expected[] = "url too long (1024 >= 1024):";
+    return !build_url(buf, parts)
+        && CHECK_LOG_N(expected, sizeof(expected) - 1);
 }
 
 static bool test_build_url() {
