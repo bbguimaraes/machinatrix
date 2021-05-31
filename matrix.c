@@ -294,14 +294,14 @@ bool read_token(char *token, size_t max) {
     bool ret = false;
     FILE *f = fopen(token, "rb");
     if(!f) {
-        log_err("fopen: %s\n", strerror(errno));
+        log_errno("fopen: %s", token);
         return false;
     }
     char *p = token;
     for(;;) {
         size_t n = fread(p, 1, max, f);
         if(ferror(f)) {
-            log_err("fread: %s\n", strerror(errno));
+            log_errno("fread");
             break;
         }
         p += n;
@@ -319,7 +319,7 @@ bool read_token(char *token, size_t max) {
         }
     }
     if(fclose(f) == EOF) {
-        log_err("fclose: %s\n", strerror(errno));
+        log_errno("fclose");
         return false;
     }
     return ret;
@@ -479,13 +479,13 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     bool ret = true;
     if(pipe(in) == -1 || pipe(out) == -1) {
         ret = false;
-        log_err("pipe: %s\n", strerror(errno));
+        log_errno("pipe");
         goto cleanup;
     }
     pid_t pid = fork();
     if(pid == -1) {
         ret = false;
-        log_err("fork: %s\n", strerror(errno));
+        log_errno("fork");
         goto cleanup;
     }
     if(!pid) {
@@ -500,12 +500,12 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     child_out = fdopen(out[0], "r");
     if(!child_in || !child_out) {
         ret = false;
-        log_err("fdopen: %s\n", strerror(errno));
+        log_errno("fdopen");
         goto cleanup;
     }
     if(!fputs(input, child_in)) {
         ret = false;
-        log_err("fputs: %s\n", strerror(errno));
+        log_errno("fputs");
         goto cleanup;
     }
     fclose(child_in);

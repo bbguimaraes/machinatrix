@@ -22,12 +22,15 @@ static bool test_log(void) {
     log_err("with program name\n");
     CMD_NAME = "cmd_name";
     log_err("with command name\n");
+    errno = ENOENT;
+    log_errno("with errno %d", ENOENT);
     PROG_NAME = NULL;
     CMD_NAME = NULL;
     return CHECK_LOG(
         "log\n"
         "prog_name: with program name\n"
-        "prog_name: cmd_name: with command name\n");
+        "prog_name: cmd_name: with command name\n"
+        "prog_name: cmd_name: with errno 2: No such file or directory\n");
 }
 
 static bool test_is_prefix() {
