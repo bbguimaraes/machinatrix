@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <curl/curl.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -68,6 +69,17 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
             break;
     }
     return true;
+}
+
+FILE *open_or_create(const char *path, const char *flags) {
+    FILE *ret;
+    if(!(ret = fopen(path, "a")))
+        return log_errno("failed to open file %s", path), NULL;
+    if(fclose(ret) == -1)
+        return log_errno("failed to close file %s", path), NULL;
+    if(!(ret = fopen(path, flags)))
+        return log_errno("failed to open file %s", path), NULL;
+    return ret;
 }
 
 static bool exec_dup(int old, int new) {

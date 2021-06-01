@@ -58,6 +58,9 @@ char *is_prefix(const char *prefix, const char *s);
  */
 bool copy_arg(const char *name, char *dst, const char *src, size_t max);
 
+/** Performs an \c open(2)s with \c O_CREAT followed by \c fopen. */
+FILE *open_or_create(const char *path, const char *flags);
+
 /**
  * Executes a command with optional input/output/error redirection.
  * If any of the `f*` parameters are not `-1`, the corresponding file descriptor
