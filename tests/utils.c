@@ -253,6 +253,38 @@ static bool test_build_url() {
     return ASSERT_STR_EQ_N(buf, expected, sizeof(expected)) && ret;
 }
 
+static bool test_open_or_create_open(void) {
+    log_set(stderr);
+    char filename[] = "machinatrix_XXXXXX";
+    assert(mkstemp(filename) != -1);
+    FILE *const f = open_or_create(filename, "r");
+    if(!f)
+        return false;
+    bool ret = true;
+    if(fclose(f))
+        log_errno("fclose"), ret = false;
+    if(unlink(filename))
+        log_errno("unlink"), ret = false;
+    return ret;
+}
+
+static bool test_open_or_create_create(void) {
+    log_set(stderr);
+    char filename[] = "machinatrix_XXXXXX";
+    assert(mkstemp(filename) != -1);
+    if(unlink(filename))
+        return log_errno("unlink"), false;
+    FILE *const f = open_or_create(filename, "r");
+    if(!f)
+        return false;
+    bool ret = true;
+    if(fclose(f))
+        log_errno("fclose"), ret = false;
+    if(unlink(filename))
+        log_errno("unlink"), ret = false;
+    return ret;
+}
+
 int main() {
     bool ret = true;
     ret = RUN(test_log) && ret;
@@ -270,5 +302,7 @@ int main() {
     ret = RUN(test_mtrix_buffer_append) && ret;
     ret = RUN(test_build_url_too_long) && ret;
     ret = RUN(test_build_url) && ret;
+    ret = RUN(test_open_or_create_open) && ret;
+    ret = RUN(test_open_or_create_create) && ret;
     return !ret;
 }

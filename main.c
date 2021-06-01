@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <fcntl.h>
 #include <getopt.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -860,24 +861,29 @@ cleanup:
 }
 
 bool increment_stats(int opt) {
-    FILE *f = fopen(STATS_FILE, "a");
-    if(!f && errno != ENOENT)
-        return log_errno("failed to create " STATS_FILE), false;
-    if(fclose(f) == -1)
-        return log_errno("failed to close " STATS_FILE), false;
-    if(!(f = fopen(STATS_FILE, "r+")))
-        return log_errno("failed to open " STATS_FILE), false;
+    FILE *const f = open_or_create(STATS_FILE, "r+");
+    if(!f)
+        return false;
     struct stats s = {0};
     fread(&s, sizeof(s), 1, f);
-    if(ferror(f))
-        return log_errno("failed to read stats"), false;
+    bool ret = false;
+    if(ferror(f)) {
+        log_errno("failed to read stats");
+        goto end;
+    }
     opt ? s.wikt++ : s.dlpo++;
     rewind(f);
-    if(fwrite(&s, sizeof(s), 1, f) != 1)
-        return log_errno("failed to write stats"), false;
-    if(fclose(f) == -1)
-        return log_errno("failed to close " STATS_FILE), false;
-    return true;
+    if(fwrite(&s, sizeof(s), 1, f) != 1) {
+        log_errno("failed to write stats");
+        goto end;
+    }
+    ret = true;
+end:
+    if(fclose(f) == -1) {
+        log_errno("failed to close " STATS_FILE);
+        ret = false;
+    }
+    return ret;
 }
 
 bool cmd_stats(const struct mtrix_config *config, const char *const *argv) {
