@@ -890,14 +890,17 @@ bool cmd_stats(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv)
         return log_err("command accepts no argument\n"), false;
-    FILE *const f = fopen(STATS_FILE, "r");
-    if(!f)
-        return log_errno("failed to open " STATS_FILE), false;
     struct stats s = {0};
-    if(fread(&s, sizeof(s), 1, f) != 1)
-        return log_errno("failed to read stats"), false;
-    if(fclose(f) == -1)
-        return log_errno("failed to close " STATS_FILE), false;
+    FILE *const f = fopen(STATS_FILE, "r");
+    if(!f) {
+        if(errno != ENOENT)
+            return log_errno("failed to open " STATS_FILE), false;
+    } else {
+        if(fread(&s, sizeof(s), 1, f) != 1)
+            return log_errno("failed to read stats"), false;
+        if(fclose(f) == -1)
+            return log_errno("failed to close " STATS_FILE), false;
+    }
     printf("Total lookups\n  wikt: %d\n  dlpo: %d\n", s.wikt, s.dlpo);
     return true;
 }
