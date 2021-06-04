@@ -2,7 +2,7 @@ CPPFLAGS += -I. -D_POSIX_C_SOURCE=200809L
 CFLAGS += -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion
 LDLIBS += -lcurl -ltidy -lcjson
 OUTPUT_OPTION += -MMD -MP
-TESTS += tests/html tests/utils
+TESTS += tests/hash tests/html tests/utils
 
 headers = \
 	config.h dlpo.h html.h utils.h wikt.h tests/common.h
@@ -17,6 +17,7 @@ machinatrix_matrix: matrix.o utils.o
 machinatrix machinatrix_matrix:
 	$(LINK.c) $^ $(LDLIBS) -o $@
 
+tests/hash: tests/hash.o
 tests/html: html.o utils.o tests/common.o tests/html.o
 tests/utils: utils.o tests/common.o tests/utils.o
 
