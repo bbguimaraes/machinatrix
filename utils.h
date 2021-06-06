@@ -65,6 +65,18 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max);
 FILE *open_or_create(const char *path, const char *flags);
 
 /**
+ * Repeatedly calls \c read(2) until all data are read.
+ * \returns \c true iff \c n bytes were read without error.
+ */
+bool read_all(int fd, void *p, size_t n);
+
+/**
+ * Repeatedly calls \c write(2) until all data are written.
+ * \returns \c true iff \c n bytes were written without error.
+ */
+bool write_all(int fd, const void *p, size_t n);
+
+/**
  * Executes a command with optional input/output/error redirection.
  * If any of the `f*` parameters are not `-1`, the corresponding file descriptor
  * is replaced by it before the `exec` call.

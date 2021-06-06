@@ -84,6 +84,32 @@ static bool test_copy_arg() {
         && ASSERT_EQ(strcmp(out, arg), 0);
 }
 
+static bool test_read_write_all(void) {
+    log_set(stderr);
+    const char check_begin[] = "check begin", check_end[] = "check end";
+    const size_t n = 1u << 20;
+    const size_t n_begin = sizeof(check_begin) - 1;
+    const size_t n_end = sizeof(check_end) - 1;
+    const size_t end_off = n - n_end;
+    FILE *const tmp = tmpfile();
+    assert(tmp);
+    char *buffer = malloc(n);
+    if(!buffer)
+        return false;
+    memset(buffer, 0, n);
+    memcpy(buffer, check_begin, n_begin);
+    memcpy(buffer + end_off, check_end, n_end);
+    const int fd = fileno(tmp);
+    bool ret = write_all(fd, buffer, n);
+    rewind(tmp);
+    memset(buffer, 0, n);
+    ret = read_all(fd, buffer, n) && ret;
+    ret = ASSERT_STR_EQ_N(buffer, check_begin, n_begin) && ret;
+    ret = ASSERT_STR_EQ_N(buffer + end_off, check_end, n_end) && ret;
+    free(buffer);
+    return ret;
+}
+
 static bool test_exec_err() {
     log_set(tmpfile());
     const char *argv[] = {"", NULL};
@@ -292,6 +318,7 @@ int main() {
     ret = RUN(test_copy_arg_empty) && ret;
     ret = RUN(test_copy_arg_too_long) && ret;
     ret = RUN(test_copy_arg) && ret;
+    ret = RUN(test_read_write_all) && ret;
     ret = RUN(test_exec_err) && ret;
     ret = RUN(test_exec) && ret;
     ret = RUN(test_exec_output) && ret;
