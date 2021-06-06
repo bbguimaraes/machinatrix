@@ -82,6 +82,29 @@ FILE *open_or_create(const char *path, const char *flags) {
     return ret;
 }
 
+bool read_all(int fd, void *p, size_t n) {
+    while(n) {
+        const ssize_t nr = read(fd, p, n);
+        switch(nr) {
+        case -1: return log_errno("read"), false;
+        case 0: return log_err("short read\n"), false;
+        default: p = (char*)p + nr, n -= (size_t)nr;
+        }
+    }
+    return true;
+}
+
+bool write_all(int fd, const void *p, size_t n) {
+    while(n) {
+        const ssize_t nw = write(fd, p, n);
+        switch(nw) {
+        case -1: return log_errno("write"), false;
+        default: p = (char*)p + nw, n -= (size_t)nw;
+        }
+    }
+    return true;
+}
+
 static bool exec_dup(int old, int new) {
     while(dup2(old, new) == -1)
         if(errno != EINTR)
