@@ -44,7 +44,7 @@ const char *CMD_NAME = NULL;
 /**
  * Function that handles a command.
  */
-typedef bool mtrix_cmd_f(const mtrix_config *, const char *const *);
+typedef bool mtrix_cmd_f(const struct mtrix_config *, const char *const *);
 
 /**
  * Structure that associates a \ref mtrix_cmd_f to a command.
@@ -68,7 +68,8 @@ int main(int argc, const char *const *argv);
 /**
  * Parses command-line arguments and fills `config`.
  */
-static bool parse_args(int argc, char *const **argv, mtrix_config *config);
+static bool parse_args(
+    int argc, char *const **argv, struct mtrix_config *config);
 
 /**
  * Prints a usage message.
@@ -78,12 +79,13 @@ static void usage(FILE *f);
 /**
  * Handles a command passed via the command line.
  */
-static bool handle_cmd(const mtrix_config *config, const char *const *argv);
+static bool handle_cmd(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Handles commands read as lines from a file.
  */
-static bool handle_file(const mtrix_config *config, FILE *f);
+static bool handle_file(const struct mtrix_config *config, FILE *f);
 
 /**
  * Breaks string into space-separated parts.
@@ -96,52 +98,62 @@ static void str_to_args(char *str, size_t max_args, char **argv);
 /**
  * Implements the `help` command.
  */
-static bool cmd_help(const mtrix_config *config, const char *const *argv);
+static bool cmd_help(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `ping` command.
  */
-static bool cmd_ping(const mtrix_config *config, const char *const *argv);
+static bool cmd_ping(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `word` command.
  */
-static bool cmd_word(const mtrix_config *config, const char *const *argv);
+static bool cmd_word(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `abbr` command.
  */
-static bool cmd_abbr(const mtrix_config *config, const char *const *argv);
+static bool cmd_abbr(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `damn` command.
  */
-static bool cmd_damn(const mtrix_config *config, const char *const *argv);
+static bool cmd_damn(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `parl` command.
  */
-static bool cmd_parl(const mtrix_config *config, const char *const *argv);
+static bool cmd_parl(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `bard` command.
  */
-static bool cmd_bard(const mtrix_config *config, const char *const *argv);
+static bool cmd_bard(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `dlpo` command.
  */
-static bool cmd_dlpo(const mtrix_config *config, const char *const *argv);
+static bool cmd_dlpo(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `wikt` command.
  */
-static bool cmd_wikt(const mtrix_config *config, const char *const *argv);
+static bool cmd_wikt(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Implements the `tr` command.
  */
-static bool cmd_tr(const mtrix_config *config, const char *const *argv);
+static bool cmd_tr(
+    const struct mtrix_config *config, const char *const *argv);
 
 /**
  * Maps a command name to the function that handles it.
@@ -166,7 +178,7 @@ mtrix_cmd COMMANDS[] = {
 int main(int argc, const char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
-    mtrix_config config = {0};
+    struct mtrix_config config = {0};
     if(!parse_args(argc, (char *const **)&argv, &config))
         return 1;
     if(config.help) {
@@ -176,7 +188,7 @@ int main(int argc, const char *const *argv) {
     return *argv ? !handle_cmd(&config, argv) : !handle_file(&config, stdin);
 }
 
-bool parse_args(int argc, char *const **argv, mtrix_config *config) {
+bool parse_args(int argc, char *const **argv, struct mtrix_config *config) {
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
         {"help", no_argument, 0, 'h'},
@@ -223,7 +235,7 @@ void usage(FILE *f) {
         PROG_NAME);
 }
 
-bool handle_cmd(const mtrix_config *config, const char *const *argv) {
+bool handle_cmd(const struct mtrix_config *config, const char *const *argv) {
     const char *name = *argv++;
     for(mtrix_cmd *cmd = COMMANDS; cmd->name; ++cmd)
         if(!strcmp(name, cmd->name)) {
@@ -235,7 +247,7 @@ bool handle_cmd(const mtrix_config *config, const char *const *argv) {
     return false;
 }
 
-bool handle_file(const mtrix_config *config, FILE *f) {
+bool handle_file(const struct mtrix_config *config, FILE *f) {
     bool ret = true;
     char *buffer = NULL;
     size_t len = 0;
@@ -276,7 +288,7 @@ void str_to_args(char *str, size_t max_args, char **argv) {
     }
 }
 
-bool cmd_help(const mtrix_config *config, const char *const *argv) {
+bool cmd_help(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
@@ -286,7 +298,7 @@ bool cmd_help(const mtrix_config *config, const char *const *argv) {
     return true;
 }
 
-bool cmd_ping(const mtrix_config *config, const char *const *argv) {
+bool cmd_ping(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
@@ -296,7 +308,7 @@ bool cmd_ping(const mtrix_config *config, const char *const *argv) {
     return true;
 }
 
-bool cmd_word(const mtrix_config *config, const char *const *argv) {
+bool cmd_word(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
@@ -314,7 +326,7 @@ bool cmd_word(const mtrix_config *config, const char *const *argv) {
     return wait_n(1);
 }
 
-bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
+bool cmd_abbr(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(!*argv) {
         log_err("command requires one argument\n");
@@ -371,7 +383,7 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
     return true;
 }
 
-bool cmd_damn(const mtrix_config *config, const char *const *argv) {
+bool cmd_damn(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     int fds[2];
     if(pipe(fds) == -1) {
@@ -412,7 +424,7 @@ bool cmd_damn(const mtrix_config *config, const char *const *argv) {
     return wait_n(1);
 }
 
-bool cmd_parl(const mtrix_config *config, const char *const *argv) {
+bool cmd_parl(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv) {
         log_err("command accepts no arguments\n");
@@ -537,7 +549,7 @@ bool cmd_parl(const mtrix_config *config, const char *const *argv) {
     return true;
 }
 
-bool cmd_bard(const mtrix_config *config, const char *const *argv) {
+bool cmd_bard(const struct mtrix_config *config, const char *const *argv) {
     (void)config;
     if(*argv) {
         log_err("command accepts no argument\n");
@@ -671,7 +683,7 @@ bool cmd_bard(const mtrix_config *config, const char *const *argv) {
     return true;
 }
 
-bool cmd_dlpo(const mtrix_config *config, const char *const *argv) {
+bool cmd_dlpo(const struct mtrix_config *config, const char *const *argv) {
     if(!*argv) {
         log_err("command requires an argument\n");
         return false;
@@ -709,7 +721,7 @@ cleanup:
     return ret;
 }
 
-bool cmd_wikt(const mtrix_config *config, const char *const *argv) {
+bool cmd_wikt(const struct mtrix_config *config, const char *const *argv) {
     if(!*argv) {
         log_err("command requires an argument\n");
         return false;
@@ -759,7 +771,7 @@ cleanup:
     return ret;
 }
 
-bool cmd_tr(const mtrix_config *config, const char *const *argv) {
+bool cmd_tr(const struct mtrix_config *config, const char *const *argv) {
     if(!*argv) {
         log_err("command requires an argument");
         return false;
