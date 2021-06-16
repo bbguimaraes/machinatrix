@@ -34,7 +34,7 @@
  * Configuration structure used by all programs.
  * Can be safely zero-initialized.
  */
-typedef struct {
+struct mtrix_config {
     /**
      * Whether the `help` command was requested.
      */
@@ -67,4 +67,4 @@ typedef struct {
      * Last batch received from the Matrix server.
      */
     char batch[MAX_BATCH];
-} mtrix_config;
+};

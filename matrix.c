@@ -82,7 +82,8 @@ int main(int argc, char *const *argv);
 /**
  * Parses command-line arguments and fills `config`.
  */
-static bool parse_args(int *argc, char *const **argv, mtrix_config *config);
+static bool parse_args(
+    int *argc, char *const **argv, struct mtrix_config *config);
 
 /**
  * Prints a usage message.
@@ -109,7 +110,7 @@ static cJSON *get_item(const cJSON *j, const char *k);
 /**
  * Fetches the inital batch for synchronization.
  */
-static bool init_batch(const mtrix_config *config, char *batch);
+static bool init_batch(const struct mtrix_config *config, char *batch);
 
 /**
  * Extracts the next batch from a server response.
@@ -119,7 +120,7 @@ static bool get_next_batch(cJSON *j, char *batch);
 /**
  * Main request/response loop.
  */
-static bool loop(const mtrix_config *config, char *batch);
+static bool loop(const struct mtrix_config *config, char *batch);
 
 /**
  * Parses a string as JSON.
@@ -129,8 +130,8 @@ static cJSON *parse_json(const char *s);
 /**
  * Handles a single request.
  */
-static void
-handle_request(const mtrix_config *config, cJSON *root, size_t user_len);
+static void handle_request(
+    const struct mtrix_config *config, cJSON *root, size_t user_len);
 
 /**
  * Checks that an event has the expected type.
@@ -155,14 +156,14 @@ static bool check_mention(const char *text, const char *user);
 /**
  * Invokes the main program and sends a reply to the room.
  */
-static bool
-reply(const mtrix_config *config, const char *room, const char *input);
+static bool reply(
+    const struct mtrix_config *config, const char *room, const char *input);
 
 /**
  * Sends a message to the room.
  */
-static bool
-send_msg(const mtrix_config *config, const char *room, const char *msg);
+static bool send_msg(
+    const struct mtrix_config *config, const char *room, const char *msg);
 
 /** Consumes all output from `f`, appending it to `buf`. */
 static bool read_output(FILE *f, mtrix_buffer *buf);
@@ -170,7 +171,7 @@ static bool read_output(FILE *f, mtrix_buffer *buf);
 int main(int argc, char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
-    mtrix_config config = {0};
+    struct mtrix_config config = {0};
     if(!parse_args(&argc, &argv, &config))
         return 1;
     if(config.help) {
@@ -204,7 +205,7 @@ int main(int argc, char *const *argv) {
     return !loop(&config, batch);
 }
 
-bool parse_args(int *argc, char *const **argv, mtrix_config *config) {
+bool parse_args(int *argc, char *const **argv, struct mtrix_config *config) {
     enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
@@ -328,7 +329,7 @@ bool read_token(char *token, size_t max) {
     return ret;
 }
 
-bool init_batch(const mtrix_config *config, char *batch) {
+bool init_batch(const struct mtrix_config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     // TODO use Authorization header
     if(!BUILD_MATRIX_URL(config, url, SYNC_URL "?" ROOM_FILTER "&"))
@@ -372,7 +373,7 @@ bool get_next_batch(cJSON *j, char *batch) {
     return true;
 }
 
-bool loop(const mtrix_config *config, char *batch) {
+bool loop(const struct mtrix_config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     const char *const root = SYNC_URL "?" TIMEOUT_PARAM "&since=";
     const char *const url_parts[] = {URL_PARTS(config, root, batch, "&"), NULL};
@@ -402,7 +403,9 @@ bool loop(const mtrix_config *config, char *batch) {
     return false;
 }
 
-void handle_request(const mtrix_config *config, cJSON *root, size_t user_len) {
+void handle_request(
+    const struct mtrix_config *config, cJSON *root, size_t user_len
+) {
     const cJSON *const join = get_item(get_item(root, "rooms"), "join");
     const cJSON *room = NULL;
     cJSON_ArrayForEach(room, join) {
@@ -475,7 +478,9 @@ bool check_mention(const char *text, const char *user) {
     return colon && *colon == ':';
 }
 
-bool reply(const mtrix_config *config, const char *room, const char *input) {
+bool reply(
+    const struct mtrix_config *config, const char *room, const char *input
+) {
     int in[2] = {0}, out[2] = {0}, err[2] = {0};
     FILE *child_in = NULL, *child_out = NULL, *child_err = NULL;
     bool ret = false;
@@ -558,7 +563,9 @@ cleanup:
     return ret;
 }
 
-bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
+bool send_msg(
+    const struct mtrix_config *config, const char *room, const char *msg
+) {
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_MATRIX_URL(config, url, ROOMS_URL "/", room, SEND_URL "?"))
         return false;
