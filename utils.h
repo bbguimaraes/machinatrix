@@ -36,6 +36,9 @@ FILE *log_set(FILE *f);
  */
 void log_err(const char *fmt, ...);
 
+/** \see log_err */
+void log_errv(const char *fmt, va_list argp);
+
 /**
  * Similar to \ref log_err, but also logs `strerror(errno)`.
  * `: %s\n` is appended, where `%s` is the result of `strerror(errno)`.  `errno`

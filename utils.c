@@ -23,7 +23,7 @@ FILE *log_set(FILE *f) {
     return ret;
 }
 
-static void log_errv(const char *fmt, va_list argp) {
+void log_errv(const char *fmt, va_list argp) {
     if(PROG_NAME)
         fprintf(LOG_OUT, "%s: ", PROG_NAME);
     if(CMD_NAME)
