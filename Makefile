@@ -10,7 +10,7 @@ sources = \
 	dlpo.c html.c main.c matrix.c utils.c wikt.c \
 	tests/html.c tests/utils.c
 
-.PHONY: all check clean docs format tidy
+.PHONY: all check clean docs tidy
 all: machinatrix machinatrix_matrix
 machinatrix: dlpo.o html.o main.o utils.o wikt.o
 machinatrix_matrix: matrix.o utils.o
@@ -22,8 +22,6 @@ tests/utils: utils.o tests/common.o tests/utils.o
 
 docs:
 	doxygen
-format:
-	for x in $(headers) $(sources); do clang-format -i "$$x"; done
 tidy:
 	echo $(sources) \
 		| xargs -n 1 \
