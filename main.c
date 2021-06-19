@@ -3,6 +3,7 @@
  * Main robot implementation.
  */
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -22,9 +23,18 @@
 #include "utils.h"
 #include "wikt.h"
 
+enum {
+    MAX_PATH = MTRIX_MAX_PATH,
+    STATS_WIKT = 0,
+    STATS_DLPO = 1,
+};
+
 /** `machinatrix`-specific configuration. */
 struct config {
     struct mtrix_config c;
+    struct {
+        char stats_file[MAX_PATH];
+    } input;
 };
 
 /**
@@ -46,8 +56,6 @@ const char *CMD_NAME = NULL;
  * Dictionary file used for commands that require a list of words.
  */
 #define DICT_FILE "/usr/share/dict/words"
-
-#define STATS_FILE "stats"
 
 /**
  * Function that handles a command.
@@ -158,10 +166,11 @@ static bool cmd_tr(const struct config *config, const char *const *argv);
  */
 static bool cmd_stats(const struct config *config, const char *const *argv);
 
-/**
- * Increments the count on wikt and dlpo lookups.
- */
-static bool increment_stats();
+/** Increments the count on wikt and dlpo lookups. */
+static bool stats_increment(const struct config *config, uint8_t opt);
+
+/** Print stats from local file. */
+static bool stats_file(const struct config *config);
 
 /**
  * Maps a command name to the function that handles it.
@@ -198,11 +207,13 @@ int main(int argc, const char *const *argv) {
 }
 
 bool parse_args(int argc, char *const **argv, struct config *config) {
+    enum { STATS_FILE };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"dry-run", no_argument, 0, 'n'},
+        {"stats-file", required_argument, 0, STATS_FILE},
         {0, 0, 0, 0},
     };
     for(;;) {
@@ -214,6 +225,11 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
         case 'h': config->c.help = true; continue;
         case 'v': config->c.verbose = true; continue;
         case 'n': config->c.dry = true; continue;
+        case STATS_FILE:
+            if(!copy_arg(
+                    "stats file", config->input.stats_file, optarg, MAX_PATH))
+                return false;
+            break;
         default: return false;
         }
     }
@@ -229,6 +245,7 @@ void usage(FILE *f) {
         "    -h, --help             this help\n"
         "    -v, --verbose          verbose output\n"
         "    -n, --dry-run          don't access external services\n"
+        "    --stats-file path      path to file where stats are stored\n"
         "Commands:\n"
         "    help:                  this help\n"
         "    ping:                  pong\n"
@@ -726,7 +743,7 @@ bool cmd_dlpo(const struct config *config, const char *const *argv) {
         goto cleanup;
     dlpo_print_definitions(stdout, tidy_doc, def);
     ret = true;
-    increment_stats(0);
+    stats_increment(config, STATS_DLPO);
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
@@ -777,7 +794,7 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
         lang = sect;
     }
     ret = true;
-    increment_stats(1);
+    stats_increment(config, STATS_WIKT);
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
@@ -852,27 +869,34 @@ cleanup:
     return ret;
 }
 
-bool increment_stats(int opt) {
-    FILE *const f = open_or_create(STATS_FILE, "r+");
+bool stats_increment(const struct config *config, uint8_t opt) {
+    const char *const path = config->input.stats_file;
+    if(!*path)
+        return true;
+    FILE *const f = open_or_create(path, "r+");
     if(!f)
         return false;
     struct stats s = {0};
     fread(&s, sizeof(s), 1, f);
     bool ret = false;
     if(ferror(f)) {
-        log_errno("failed to read stats");
+        log_errno("%s: fread", __func__);
         goto end;
     }
-    opt ? s.wikt++ : s.dlpo++;
+    switch(opt) {
+    case STATS_WIKT: s.wikt++; break;
+    case STATS_DLPO: s.dlpo++; break;
+    default: assert(!"invalid option");
+    }
     rewind(f);
     if(fwrite(&s, sizeof(s), 1, f) != 1) {
-        log_errno("failed to write stats");
+        log_errno("%s: fwrite", __func__);
         goto end;
     }
     ret = true;
 end:
     if(fclose(f) == -1) {
-        log_errno("failed to close " STATS_FILE);
+        log_errno("%s: fclose", __func__);
         ret = false;
     }
     return ret;
@@ -882,16 +906,23 @@ bool cmd_stats(const struct config *config, const char *const *argv) {
     (void)config;
     if(*argv)
         return log_err("command accepts no argument\n"), false;
+    return stats_file(config);
+}
+
+bool stats_file(const struct config *config) {
+    const char *path = config->input.stats_file;
+    if(!*path)
+        return true;
     struct stats s = {0};
-    FILE *const f = fopen(STATS_FILE, "r");
+    FILE *const f = fopen(path, "r");
     if(!f) {
         if(errno != ENOENT)
-            return log_errno("failed to open " STATS_FILE), false;
+            return log_errno("%s: fopen(%s)", __func__, path), false;
     } else {
         if(fread(&s, sizeof(s), 1, f) != 1)
-            return log_errno("failed to read stats"), false;
+            return log_errno("%s: fread", __func__), false;
         if(fclose(f) == -1)
-            return log_errno("failed to close " STATS_FILE), false;
+            return log_errno("%s: close", __func__), false;
     }
     printf("Total lookups\n  wikt: %d\n  dlpo: %d\n", s.wikt, s.dlpo);
     return true;

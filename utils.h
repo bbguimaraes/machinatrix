@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+/** Maximum path length, arbitrarily chosen. */
+#define MTRIX_MAX_PATH ((size_t)1024U)
+
 /**
  * Maximum length for URLs built by \ref build_url.
  */
