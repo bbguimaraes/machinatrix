@@ -310,7 +310,7 @@ bool cmd_word(const mtrix_config *config, const char *const *argv) {
     if(!pid)
         return exec(
             (const char *[]){"shuf", "-n", "1", DICT_FILE, 0},
-            -1, -1);
+            -1, -1, -1);
     return wait_n(1);
 }
 
@@ -338,7 +338,7 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
             const char *cargv[] = {"look", 0, 0};
             char arg[] = {*c, '\0'};
             cargv[1] = arg;
-            return exec(cargv, -1, fds[0][1]);
+            return exec(cargv, -1, fds[0][1], -1);
         }
         close(fds[0][1]);
         if(pipe(fds[1]) == -1) {
@@ -349,7 +349,7 @@ bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
         if(!pid1) {
             close(fds[1][0]);
             const char *cargv[] = {"shuf", "-n", "1", 0};
-            return exec(cargv, fds[0][0], fds[1][1]);
+            return exec(cargv, fds[0][0], fds[1][1], -1);
         }
         close(fds[0][0]);
         close(fds[1][1]);
@@ -387,7 +387,7 @@ bool cmd_damn(const mtrix_config *config, const char *const *argv) {
         close(fds[0]);
         return exec(
             (const char *[]){"shuf", DICT_FILE, "-n", *argv ? *argv : "3", 0},
-            -1, fds[1]);
+            -1, fds[1], -1);
     }
     close(fds[1]);
     FILE *child = fdopen(fds[0], "r");

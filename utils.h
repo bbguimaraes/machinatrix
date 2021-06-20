@@ -56,14 +56,15 @@ char *is_prefix(const char *prefix, const char *s);
 bool copy_arg(const char *name, char *dst, const char *src, size_t max);
 
 /**
- * Executes a command with optional input/output redirection.
+ * Executes a command with optional input/output/error redirection.
  * If any of the `f*` parameters are not `-1`, the corresponding file descriptor
  * is replaced by it before the `exec` call.
  * \param argv `execv`-style argument list.
  * \param fin Substitute for `stdin`.
  * \param fout Substitute for `stdout`.
+ * \param ferr Substitute for `stderr`.
  */
-bool exec(const char *const *argv, int fin, int fout);
+bool exec(const char *const *argv, int fin, int fout, int ferr);
 
 /**
  * Waits for `n` child processes to exit.
