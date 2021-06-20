@@ -5,6 +5,7 @@
  */
 #include <assert.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -101,6 +102,10 @@ static bool short_username(const char *user, char *out);
  * \param max Maximum length for `token`, including the null terminator.
  */
 static bool read_token(char *token, size_t max);
+
+/** Logs a message if verbose output was requested. */
+static void config_verbose(
+    const struct mtrix_config *config, const char *fmt, ...);
 
 /**
  * Shortcut for `cJSON_GetObjectItemCaseSensitive.
@@ -200,8 +205,7 @@ int main(int argc, char *const *argv) {
         strcpy(batch, config.batch);
     } else if(!init_batch(&config, batch))
         return 1;
-    if(config.verbose)
-        printf("Using batch: %s\n", batch);
+    config_verbose(&config, "Using batch: %s\n", batch);
     return !loop(&config, batch);
 }
 
@@ -329,6 +333,15 @@ bool read_token(char *token, size_t max) {
     return ret;
 }
 
+void config_verbose(const struct mtrix_config *config, const char *fmt, ...) {
+    if(!config->verbose)
+        return;
+    va_list argp;
+    va_start(argp, fmt);
+    log_errv(fmt, argp);
+    va_end(argp);
+}
+
 bool init_batch(const struct mtrix_config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     // TODO use Authorization header
@@ -351,8 +364,7 @@ bool init_batch(const struct mtrix_config *config, char *batch) {
     }
     if(!get_next_batch(root, batch))
         ret = false;
-    if(config->verbose)
-        printf("Next batch: %s\n", batch);
+    config_verbose(config, "Next batch: %s\n", batch);
 cleanup:
     cJSON_Delete(root);
     return ret;
@@ -395,8 +407,7 @@ bool loop(const struct mtrix_config *config, char *batch) {
             break;
         handle_request(config, req, user_len);
         const time_t dt = time(NULL) - start;
-        if(config->verbose)
-            printf("Elapsed: %lds\n", dt);
+        config_verbose(config, "Elapsed: %lds\n", dt);
     }
     free(buffer.p);
     cJSON_Delete(req);
@@ -419,20 +430,17 @@ void handle_request(
                 continue;
             const char *const sender = event_sender(event);
             if(!sender) {
-                if(config->verbose)
-                    printf("Skipping message without sender: %s\n", text);
+                config_verbose(
+                    config, "Skipping message without sender: %s\n", text);
                 continue;
             }
-            if(config->verbose)
-                printf("Message (from %s): %s\n", sender, text);
+            config_verbose(config, "Message (from %s): %s\n", sender, text);
             if(strcmp(sender, config->user) == 0) {
-                if(config->verbose)
-                    printf("Skipping message from self\n");
+                config_verbose(config, "Skipping message from self\n");
                 continue;
             }
             if(!check_mention(text, config->short_user)) {
-                if(config->verbose)
-                    printf("Skipping message: not mentioned\n");
+                config_verbose(config, "Skipping message: not mentioned\n");
                 continue;
             }
             if(!reply(config, room->string, text + user_len + 1)) {
