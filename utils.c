@@ -71,7 +71,7 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
 }
 
 bool exec(const char *const *argv, int fin, int fout) {
-    if(fin) {
+    if(fin != -1) {
         for(;;) {
             if(dup2(fin, STDIN_FILENO) != -1)
                 break;
@@ -82,7 +82,7 @@ bool exec(const char *const *argv, int fin, int fout) {
         }
         close(fin);
     }
-    if(fout) {
+    if(fout != -1) {
         for(;;) {
             if(dup2(fout, STDOUT_FILENO) != -1)
                 break;
