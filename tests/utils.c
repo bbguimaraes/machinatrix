@@ -87,7 +87,7 @@ static bool test_copy_arg() {
 static bool test_exec_err() {
     log_set(tmpfile());
     const char *argv[] = {"", NULL};
-    bool ret = ASSERT(!exec(argv, -1, -1));
+    bool ret = ASSERT(!exec(argv, -1, -1, -1));
     char buf[1024];
     snprintf(buf, 1023, "execvp: %s\n", strerror(ENOENT));
     return CHECK_LOG(buf) && ret;
@@ -98,47 +98,65 @@ static bool test_exec() {
     pid_t pid = fork();
     assert(pid != -1);
     if(!pid)
-        exit(!exec(argv, -1, -1));
+        exit(!exec(argv, -1, -1, -1));
     return ASSERT(waitpid(-1, NULL, 0));
 }
 
 static bool test_exec_output() {
     log_set(stderr);
-    const char *argv[] = {"sh", "-c", "echo stdout && exec cat", NULL};
+    const char *argv[] = {
+        "sh", "-c",
+        "echo stdout && echo >&2 stderr && exec cat",
+        NULL,
+    };
     union {
-        int p[4];
+        int p[6];
         struct {
-            int child_read, parent_write, parent_read, child_write;
+            struct { int read, write; } in, out, err;
         };
     } fds;
-    static_assert(sizeof(fds) == 4 * sizeof(int), "unexpected padding");
+    static_assert(sizeof(fds) == 6 * sizeof(int), "unexpected padding");
     assert(pipe(fds.p) == 0);
     assert(pipe(fds.p + 2) == 0);
+    assert(pipe(fds.p + 4) == 0);
     const pid_t pid = fork();
     assert(pid != -1);
     if(!pid) {
-        assert(close(fds.parent_write) == 0);
-        assert(close(fds.parent_read) == 0);
-        exit(!exec(argv, fds.child_read, fds.child_write));
+        assert(close(fds.in.write) == 0);
+        assert(close(fds.out.read) == 0);
+        assert(close(fds.err.read) == 0);
+        exit(!exec(argv, fds.in.read, fds.out.write, fds.err.write));
     }
-    assert(close(fds.child_read) == 0);
-    assert(close(fds.child_write) == 0);
+    assert(close(fds.in.read) == 0);
+    assert(close(fds.out.write) == 0);
+    assert(close(fds.err.write) == 0);
     const char input[] = "stdin\n";
     const size_t n_write = sizeof(input) - 1;
     assert(n_write < SSIZE_MAX);
-    assert(write(fds.parent_write, input, n_write) == (ssize_t)n_write);
-    assert(close(fds.parent_write) == 0);
+    assert(write(fds.in.write, input, n_write) == (ssize_t)n_write);
+    assert(close(fds.in.write) == 0);
     int status;
     assert(wait(&status) != -1);
     bool ret = ASSERT_EQ(status, 0);
-    const char expected[] = "stdout\nstdin\n";
-    char output[sizeof(expected)];
-    const size_t n_read = sizeof(expected) - 1;
-    const ssize_t n = read(fds.parent_read, output, n_read);
-    ret = ASSERT_EQ(n, (ssize_t)n_read) && ret;
-    ret = ASSERT_STR_EQ_N(output, expected, sizeof(expected) - 1) && ret;
-    ret = ASSERT_EQ(read(fds.parent_read, output, n_read), 0) && ret;
-    assert(close(fds.parent_read) == 0);
+    const char expected_out[] = "stdout\nstdin\n";
+    const char expected_err[] = "stderr\n";
+    const size_t out_len = sizeof(expected_out) - 1;
+    const size_t err_len = sizeof(expected_err) - 1;
+    char output[out_len + err_len];
+    {
+        const ssize_t n = read(fds.out.read, output, out_len);
+        ret = ASSERT_EQ(n, (ssize_t)out_len) && ret;
+        ret = ASSERT_EQ(read(fds.out.read, output, out_len), 0) && ret;
+        assert(close(fds.out.read) == 0);
+    }
+    {
+        const ssize_t n = read(fds.err.read, output + out_len, err_len);
+        ret = ASSERT_EQ(n, (ssize_t)err_len) && ret;
+        ret = ASSERT_EQ(read(fds.err.read, output, err_len), 0) && ret;
+        assert(close(fds.err.read) == 0);
+    }
+    ret = ASSERT_STR_EQ_N(output, expected_out, out_len) && ret;
+    ret = ASSERT_STR_EQ_N(output + out_len, expected_err, err_len) && ret;
     return ret;
 }
 
