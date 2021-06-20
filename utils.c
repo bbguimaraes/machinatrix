@@ -127,7 +127,9 @@ size_t curl_write_cb(char *in, size_t size, size_t nmemb, TidyBuffer *out) {
     return r;
 }
 
-size_t mtrix_buffer_append(char *p, size_t size, size_t n, mtrix_buffer *b) {
+size_t mtrix_buffer_append(
+    const char *p, size_t size, size_t n, mtrix_buffer *b
+) {
     if(!size || !n)
         return 0;
     size_t r = size * n;
