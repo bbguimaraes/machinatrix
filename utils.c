@@ -70,29 +70,21 @@ bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
     return true;
 }
 
-bool exec(const char *const *argv, int fin, int fout) {
-    if(fin != -1) {
-        for(;;) {
-            if(dup2(fin, STDIN_FILENO) != -1)
-                break;
-            if(errno == EINTR)
-                continue;
-            log_errno("dup2");
-            return false;
-        }
-        close(fin);
-    }
-    if(fout != -1) {
-        for(;;) {
-            if(dup2(fout, STDOUT_FILENO) != -1)
-                break;
-            if(errno == EINTR)
-                continue;
-            log_errno("dup2");
-            return false;
-        }
-        close(fout);
-    }
+static bool exec_dup(int old, int new) {
+    while(dup2(old, new) == -1)
+        if(errno != EINTR)
+            return log_errno("dup2"), false;
+    close(old);
+    return true;
+}
+
+bool exec(const char *const *argv, int fin, int fout, int ferr) {
+    if(fin != -1 && !exec_dup(fin, STDIN_FILENO))
+        return false;
+    if(fout != -1 && !exec_dup(fout, STDOUT_FILENO))
+        return false;
+    if(ferr != -1 && !exec_dup(ferr, STDERR_FILENO))
+        return false;
     if(execvp(argv[0], (char *const *)argv) != -1)
         return true;
     log_errno("execvp");

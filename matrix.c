@@ -492,7 +492,7 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
         close(in[1]);
         close(out[0]);
         const char *cargv[] = {"./machinatrix", 0};
-        return exec(cargv, in[0], out[1]);
+        return exec(cargv, in[0], out[1], -1);
     }
     close(in[0]);
     close(out[1]);
