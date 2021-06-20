@@ -164,6 +164,9 @@ reply(const mtrix_config *config, const char *room, const char *input);
 static bool
 send_msg(const mtrix_config *config, const char *room, const char *msg);
 
+/** Consumes all output from `f`, appending it to `buf`. */
+static bool read_output(FILE *f, mtrix_buffer *buf);
+
 int main(int argc, char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
@@ -473,18 +476,13 @@ bool check_mention(const char *text, const char *user) {
 }
 
 bool reply(const mtrix_config *config, const char *room, const char *input) {
-    int in[2] = {0, 0}, out[2] = {0, 0};
+    int in[2] = {0}, out[2] = {0};
     FILE *child_in = NULL, *child_out = NULL;
-    mtrix_buffer msg = {NULL, 0};
-    bool ret = true;
-    if(pipe(in) == -1 || pipe(out) == -1) {
-        ret = false;
-        log_errno("pipe");
-        goto cleanup;
-    }
+    bool ret = false;
+    if(pipe(in) == -1) { log_errno("pipe"); goto cleanup; }
+    if(pipe(out) == -1) { log_errno("pipe"); goto cleanup; }
     pid_t pid = fork();
     if(pid == -1) {
-        ret = false;
         log_errno("fork");
         goto cleanup;
     }
@@ -496,45 +494,46 @@ bool reply(const mtrix_config *config, const char *room, const char *input) {
     }
     close(in[0]);
     close(out[1]);
-    child_in = fdopen(in[1], "w");
-    child_out = fdopen(out[0], "r");
-    if(!child_in || !child_out) {
-        ret = false;
+    if(!(child_in = fdopen(in[1], "w"))) {
+        log_errno("fdopen");
+        goto cleanup;
+    }
+    if(!(child_out = fdopen(out[0], "r"))) {
         log_errno("fdopen");
         goto cleanup;
     }
     if(!fputs(input, child_in)) {
-        ret = false;
         log_errno("fputs");
         goto cleanup;
     }
-    fclose(child_in);
-    child_in = 0;
-    char *buffer = 0;
-    size_t buffer_len = 0;
-    for(;;) {
-        ssize_t len;
-        if((len = getline(&buffer, &buffer_len, child_out)) == -1)
-            break;
-        mtrix_buffer_append(buffer, 1, (size_t)len, &msg);
-    }
-    if(buffer)
-        free(buffer);
-    if(!wait_n(1)) {
-        ret = false;
+    if(fclose(child_in)) {
+        log_errno("fclose");
         goto cleanup;
     }
+    child_in = 0;
+    mtrix_buffer msg = {0};
+    if(!read_output(child_out, &msg))
+        goto cleanup;
+    if(!wait_n(1))
+        goto cleanup;
     if(!send_msg(config, room, msg.p))
-        ret = false;
+        goto cleanup;
+    ret = true;
 cleanup:
-    if(child_in)
-        fclose(child_in);
-    else if(in[0])
-        close(in[0]);
-    if(child_out)
-        fclose(child_out);
-    else if(out[0])
-        close(out[0]);
+    if(child_in && fclose(child_in)) {
+        log_errno("fclose");
+        ret = false;
+    } else if(in[0] && close(in[0]) == -1) {
+        log_errno("close");
+        ret = false;
+    }
+    if(child_out && fclose(child_out)) {
+        log_errno("fclose");
+        ret = false;
+    } else if(out[0] && close(out[0]) == -1) {
+        log_errno("close");
+        ret = false;
+    }
     free(msg.p);
     return ret;
 }
@@ -554,4 +553,15 @@ bool send_msg(const mtrix_config *config, const char *room, const char *msg) {
     free(data);
     free(resp.p);
     return ret;
+}
+
+bool read_output(FILE *f, mtrix_buffer *buf) {
+    char buffer[1024];
+    while(!feof(f)) {
+        const size_t n = fread(buffer, 1, sizeof(buffer), f);
+        if(ferror(f))
+            return log_errno("%s: fread", __func__), false;
+        mtrix_buffer_append(buffer, 1, n, buf);
+    }
+    return true;
 }
