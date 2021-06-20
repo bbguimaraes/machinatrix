@@ -317,7 +317,7 @@ bool cmd_word(const mtrix_config *config, const char *const *argv) {
 bool cmd_abbr(const mtrix_config *config, const char *const *argv) {
     (void)config;
     if(!*argv) {
-        log_err("abbr: command requires one argument\n");
+        log_err("command requires one argument\n");
         return false;
     }
     char *buffer = NULL;
