@@ -87,7 +87,7 @@ static bool test_copy_arg() {
 static bool test_exec_err() {
     log_set(tmpfile());
     const char *argv[] = {"", NULL};
-    bool ret = ASSERT(!exec(argv, 0, 0));
+    bool ret = ASSERT(!exec(argv, -1, -1));
     char buf[1024];
     snprintf(buf, 1023, "execvp: %s\n", strerror(ENOENT));
     return CHECK_LOG(buf) && ret;
@@ -98,7 +98,7 @@ static bool test_exec() {
     pid_t pid = fork();
     assert(pid != -1);
     if(!pid)
-        exit(!exec(argv, 0, 0));
+        exit(!exec(argv, -1, -1));
     return ASSERT(waitpid(-1, NULL, 0));
 }
 

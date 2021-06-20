@@ -56,7 +56,9 @@ char *is_prefix(const char *prefix, const char *s);
 bool copy_arg(const char *name, char *dst, const char *src, size_t max);
 
 /**
- * Calls the corresponding system call, with optional input/output FDs.
+ * Executes a command with optional input/output redirection.
+ * If any of the `f*` parameters are not `-1`, the corresponding file descriptor
+ * is replaced by it before the `exec` call.
  * \param argv `execv`-style argument list.
  * \param fin Substitute for `stdin`.
  * \param fout Substitute for `stdout`.
