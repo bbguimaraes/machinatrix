@@ -93,7 +93,8 @@ typedef struct {
 /**
  * Copies data to the buffer, reallocating if necessary.
  */
-size_t mtrix_buffer_append(char *p, size_t size, size_t n, mtrix_buffer *b);
+size_t mtrix_buffer_append(
+    const char *p, size_t size, size_t n, mtrix_buffer *b);
 
 /**
  * Joins several URL parts into one, limited to \ref MTRIX_MAX_URL_LEN.
