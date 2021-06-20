@@ -56,14 +56,20 @@
 
 /**
  * Prepends the server and appends the token from the configuration.
- * \param c Pointer to a \ref mtrix_config object.
+ * \param c Pointer to a \ref config object.
  */
-#define URL_PARTS(c, ...) c->server, __VA_ARGS__, "access_token=", c->token
+#define URL_PARTS(c, ...) \
+    (c)->server, __VA_ARGS__, "access_token=", (c)->token
 
 /**
  * Builds a URL using \ref URL_PARTS.
  */
-#define BUILD_MATRIX_URL(c, url, ...) BUILD_URL(url, URL_PARTS(c, __VA_ARGS__))
+#define BUILD_MATRIX_URL(c, url, ...) \
+    BUILD_URL(url, URL_PARTS((c), __VA_ARGS__))
+
+struct config {
+    struct mtrix_config c;
+};
 
 /**
  * To be filled by `argv[0]` later, for logging.
@@ -83,8 +89,7 @@ int main(int argc, char *const *argv);
 /**
  * Parses command-line arguments and fills `config`.
  */
-static bool parse_args(
-    int *argc, char *const **argv, struct mtrix_config *config);
+static bool parse_args(int *argc, char *const **argv, struct config *config);
 
 /**
  * Prints a usage message.
@@ -104,8 +109,7 @@ static bool short_username(const char *user, char *out);
 static bool read_token(char *token, size_t max);
 
 /** Logs a message if verbose output was requested. */
-static void config_verbose(
-    const struct mtrix_config *config, const char *fmt, ...);
+static void config_verbose(const struct config *config, const char *fmt, ...);
 
 /**
  * Shortcut for `cJSON_GetObjectItemCaseSensitive.
@@ -115,7 +119,7 @@ static cJSON *get_item(const cJSON *j, const char *k);
 /**
  * Fetches the inital batch for synchronization.
  */
-static bool init_batch(const struct mtrix_config *config, char *batch);
+static bool init_batch(const struct config *config, char *batch);
 
 /**
  * Extracts the next batch from a server response.
@@ -125,7 +129,7 @@ static bool get_next_batch(cJSON *j, char *batch);
 /**
  * Main request/response loop.
  */
-static bool loop(const struct mtrix_config *config, char *batch);
+static bool loop(const struct config *config, char *batch);
 
 /**
  * Parses a string as JSON.
@@ -136,7 +140,7 @@ static cJSON *parse_json(const char *s);
  * Handles a single request.
  */
 static void handle_request(
-    const struct mtrix_config *config, cJSON *root, size_t user_len);
+    const struct config *config, cJSON *root, size_t user_len);
 
 /**
  * Checks that an event has the expected type.
@@ -162,13 +166,13 @@ static bool check_mention(const char *text, const char *user);
  * Invokes the main program and sends a reply to the room.
  */
 static bool reply(
-    const struct mtrix_config *config, const char *room, const char *input);
+    const struct config *config, const char *room, const char *input);
 
 /**
  * Sends a message to the room.
  */
 static bool send_msg(
-    const struct mtrix_config *config, const char *room, const char *msg);
+    const struct config *config, const char *room, const char *msg);
 
 /** Consumes all output from `f`, appending it to `buf`. */
 static bool read_output(FILE *f, mtrix_buffer *buf);
@@ -176,40 +180,40 @@ static bool read_output(FILE *f, mtrix_buffer *buf);
 int main(int argc, char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
-    struct mtrix_config config = {0};
+    struct config config = {0};
     if(!parse_args(&argc, &argv, &config))
         return 1;
-    if(config.help) {
+    if(config.c.help) {
         usage(stdout);
         return 0;
     }
-    if(!*config.server) {
+    if(!*config.c.server) {
         log_err("no server specified\n");
         return 1;
     }
-    if(!*config.user) {
+    if(!*config.c.user) {
         log_err("no user specified\n");
         return 1;
     }
-    if(!*config.token) {
+    if(!*config.c.token) {
         log_err("no token specified\n");
         return 1;
     }
-    if(config.verbose) {
-        printf("Using server: %s\n", config.server);
-        printf("Using user: %s\n", config.user);
+    if(config.c.verbose) {
+        printf("Using server: %s\n", config.c.server);
+        printf("Using user: %s\n", config.c.user);
     }
     char batch[MAX_BATCH];
-    if(*config.batch) {
-        assert(strlen(config.batch) < sizeof(batch));
-        strcpy(batch, config.batch);
+    if(*config.c.batch) {
+        assert(strlen(config.c.batch) < sizeof(batch));
+        strcpy(batch, config.c.batch);
     } else if(!init_batch(&config, batch))
         return 1;
     config_verbose(&config, "Using batch: %s\n", batch);
     return !loop(&config, batch);
 }
 
-bool parse_args(int *argc, char *const **argv, struct mtrix_config *config) {
+bool parse_args(int *argc, char *const **argv, struct config *config) {
     enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
@@ -228,31 +232,31 @@ bool parse_args(int *argc, char *const **argv, struct mtrix_config *config) {
         if(c == -1)
             break;
         switch(c) {
-        case 'h': config->help = true; continue;
-        case 'v': config->verbose = true; continue;
-        case 'n': config->dry = true; continue;
+        case 'h': config->c.help = true; continue;
+        case 'v': config->c.verbose = true; continue;
+        case 'n': config->c.dry = true; continue;
         case 0: break;
         default: return false;
         }
         switch(idx) {
         case SERVER:
-            if(!copy_arg("server name", config->server, optarg, MAX_SERVER))
+            if(!copy_arg("server name", config->c.server, optarg, MAX_SERVER))
                 return false;
             break;
         case USER:
-            if(!copy_arg("user name", config->user, optarg, MAX_USER))
+            if(!copy_arg("user name", config->c.user, optarg, MAX_USER))
                 return false;
-            if(!short_username(config->user, config->short_user))
+            if(!short_username(config->c.user, config->c.short_user))
                 return false;
             break;
         case TOKEN:
-            if(!copy_arg("token", config->token, optarg, MAX_TOKEN))
+            if(!copy_arg("token", config->c.token, optarg, MAX_TOKEN))
                 return false;
-            if(!read_token(config->token, MAX_TOKEN))
+            if(!read_token(config->c.token, MAX_TOKEN))
                 return false;
             break;
         case BATCH:
-            if(!copy_arg("batch", config->batch, optarg, MAX_BATCH))
+            if(!copy_arg("batch", config->c.batch, optarg, MAX_BATCH))
                 return false;
             break;
         default: return false;
@@ -333,8 +337,8 @@ bool read_token(char *token, size_t max) {
     return ret;
 }
 
-void config_verbose(const struct mtrix_config *config, const char *fmt, ...) {
-    if(!config->verbose)
+void config_verbose(const struct config *config, const char *fmt, ...) {
+    if(!config->c.verbose)
         return;
     va_list argp;
     va_start(argp, fmt);
@@ -342,13 +346,13 @@ void config_verbose(const struct mtrix_config *config, const char *fmt, ...) {
     va_end(argp);
 }
 
-bool init_batch(const struct mtrix_config *config, char *batch) {
+bool init_batch(const struct config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     // TODO use Authorization header
-    if(!BUILD_MATRIX_URL(config, url, SYNC_URL "?" ROOM_FILTER "&"))
+    if(!BUILD_MATRIX_URL(&config->c, url, SYNC_URL "?" ROOM_FILTER "&"))
         return false;
     mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, config->verbose)) {
+    if(!request(url, &buffer, config->c.verbose)) {
         free(buffer.p);
         return false;
     }
@@ -385,13 +389,14 @@ bool get_next_batch(cJSON *j, char *batch) {
     return true;
 }
 
-bool loop(const struct mtrix_config *config, char *batch) {
+bool loop(const struct config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     const char *const root = SYNC_URL "?" TIMEOUT_PARAM "&since=";
-    const char *const url_parts[] = {URL_PARTS(config, root, batch, "&"), NULL};
+    const char *const url_parts[] =
+        {URL_PARTS(&config->c, root, batch, "&"), NULL};
     if(!build_url(url, url_parts))
         return false;
-    size_t user_len = strlen(config->short_user);
+    size_t user_len = strlen(config->c.short_user);
     mtrix_buffer buffer = {0};
     cJSON *req = NULL;
     for(;;) {
@@ -399,7 +404,7 @@ bool loop(const struct mtrix_config *config, char *batch) {
         if(!build_url(url, url_parts))
             return false;
         buffer.s = 0;
-        if(!request(url, &buffer, config->verbose))
+        if(!request(url, &buffer, config->c.verbose))
             break;
         if(!(req = parse_json(buffer.p)))
             break;
@@ -414,9 +419,7 @@ bool loop(const struct mtrix_config *config, char *batch) {
     return false;
 }
 
-void handle_request(
-    const struct mtrix_config *config, cJSON *root, size_t user_len
-) {
+void handle_request(const struct config *config, cJSON *root, size_t user_len) {
     const cJSON *const join = get_item(get_item(root, "rooms"), "join");
     const cJSON *room = NULL;
     cJSON_ArrayForEach(room, join) {
@@ -435,11 +438,11 @@ void handle_request(
                 continue;
             }
             config_verbose(config, "Message (from %s): %s\n", sender, text);
-            if(strcmp(sender, config->user) == 0) {
+            if(strcmp(sender, config->c.user) == 0) {
                 config_verbose(config, "Skipping message from self\n");
                 continue;
             }
-            if(!check_mention(text, config->short_user)) {
+            if(!check_mention(text, config->c.short_user)) {
                 config_verbose(config, "Skipping message: not mentioned\n");
                 continue;
             }
@@ -486,9 +489,7 @@ bool check_mention(const char *text, const char *user) {
     return colon && *colon == ':';
 }
 
-bool reply(
-    const struct mtrix_config *config, const char *room, const char *input
-) {
+bool reply(const struct config *config, const char *room, const char *input) {
     int in[2] = {0}, out[2] = {0}, err[2] = {0};
     FILE *child_in = NULL, *child_out = NULL, *child_err = NULL;
     bool ret = false;
@@ -571,11 +572,9 @@ cleanup:
     return ret;
 }
 
-bool send_msg(
-    const struct mtrix_config *config, const char *room, const char *msg
-) {
+bool send_msg(const struct config *config, const char *room, const char *msg) {
     char url[MTRIX_MAX_URL_LEN];
-    if(!BUILD_MATRIX_URL(config, url, ROOMS_URL "/", room, SEND_URL "?"))
+    if(!BUILD_MATRIX_URL(&config->c, url, ROOMS_URL "/", room, SEND_URL "?"))
         return false;
     cJSON *msg_json = cJSON_CreateObject();
     cJSON_AddItemToObject(msg_json, "msgtype", cJSON_CreateString("m.text"));
@@ -584,7 +583,7 @@ bool send_msg(
     free(msg_json);
     mtrix_buffer resp = {NULL, 0};
     const post_request r = {.url = url, .data_len = strlen(data), .data = data};
-    const bool ret = post(r, config->verbose, &resp);
+    const bool ret = post(r, config->c.verbose, &resp);
     free(data);
     free(resp.p);
     return ret;
