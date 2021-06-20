@@ -69,6 +69,8 @@
 
 struct config {
     struct mtrix_config c;
+    /** Extra `machinatrix` arguments, in `execvp` format. */
+    const char **args;
 };
 
 /**
@@ -84,12 +86,13 @@ const char *CMD_NAME = NULL;
 /**
  * Program entry point.
  */
-int main(int argc, char *const *argv);
+int main(int argc, const char *const *argv);
 
 /**
  * Parses command-line arguments and fills `config`.
  */
-static bool parse_args(int *argc, char *const **argv, struct config *config);
+static bool parse_args(
+    int *argc, const char *const **argv, struct config *config);
 
 /**
  * Prints a usage message.
@@ -107,6 +110,12 @@ static bool short_username(const char *user, char *out);
  * \param max Maximum length for `token`, including the null terminator.
  */
 static bool read_token(char *token, size_t max);
+
+/** Destructs `config`. */
+static void config_destroy(struct config *config);
+
+/** Constructs the `machinatrix` command line with references to `argv`. */
+static void config_set_args(struct config *config, const char *const *argv);
 
 /** Logs a message if verbose output was requested. */
 static void config_verbose(const struct config *config, const char *fmt, ...);
@@ -177,27 +186,29 @@ static bool send_msg(
 /** Consumes all output from `f`, appending it to `buf`. */
 static bool read_output(FILE *f, mtrix_buffer *buf);
 
-int main(int argc, char *const *argv) {
+int main(int argc, const char *const *argv) {
     log_set(stderr);
     PROG_NAME = argv[0];
     struct config config = {0};
     if(!parse_args(&argc, &argv, &config))
         return 1;
+    bool ret = false;
     if(config.c.help) {
         usage(stdout);
-        return 0;
+        ret = true;
+        goto end;
     }
     if(!*config.c.server) {
         log_err("no server specified\n");
-        return 1;
+        goto end;
     }
     if(!*config.c.user) {
         log_err("no user specified\n");
-        return 1;
+        goto end;
     }
     if(!*config.c.token) {
         log_err("no token specified\n");
-        return 1;
+        goto end;
     }
     if(config.c.verbose) {
         printf("Using server: %s\n", config.c.server);
@@ -208,12 +219,17 @@ int main(int argc, char *const *argv) {
         assert(strlen(config.c.batch) < sizeof(batch));
         strcpy(batch, config.c.batch);
     } else if(!init_batch(&config, batch))
-        return 1;
+        goto end;
     config_verbose(&config, "Using batch: %s\n", batch);
-    return !loop(&config, batch);
+    if(!loop(&config, batch))
+        goto end;
+    ret = true;
+end:
+    config_destroy(&config);
+    return !ret;
 }
 
-bool parse_args(int *argc, char *const **argv, struct config *config) {
+bool parse_args(int *argc, const char *const **argv, struct config *config) {
     enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
@@ -228,7 +244,8 @@ bool parse_args(int *argc, char *const **argv, struct config *config) {
     };
     for(;;) {
         int idx = 0;
-        const int c = getopt_long(*argc, *argv, short_opts, long_opts, &idx);
+        const int c = getopt_long(
+            *argc, (char *const*)*argv, short_opts, long_opts, &idx);
         if(c == -1)
             break;
         switch(c) {
@@ -262,7 +279,9 @@ bool parse_args(int *argc, char *const **argv, struct config *config) {
         default: return false;
         }
     }
-    *argv += optind;
+    const char *const *new_argv = *argv + optind;
+    config_set_args(config, new_argv);
+    *argv = new_argv;
     *argc -= optind;
     return true;
 }
@@ -278,7 +297,9 @@ void usage(FILE *f) {
         "        --server <arg>     matrix server (required)\n"
         "        --user   <arg>     matrix user (required)\n"
         "        --token  <arg>     matrix token file (required)\n"
-        "        --batch  <arg>     matrix batch file\n",
+        "        --batch  <arg>     matrix batch file\n"
+        "\n"
+        "Additional positional arguments are forwarded to `machinatrix`.\n",
         PROG_NAME);
 }
 
@@ -335,6 +356,22 @@ bool read_token(char *token, size_t max) {
         return false;
     }
     return ret;
+}
+
+void config_destroy(struct config *config) {
+    free(config->args);
+}
+
+void config_set_args(struct config *config, const char *const *argv) {
+    size_t n = 0;
+    for(const char *const *p = argv; *p; ++p)
+        ++n;
+    const char **ret = calloc(n + 2, sizeof(const char**));
+    ret[0] = "machinatrix";
+    for(size_t i = 0; i < n; ++i)
+        ret[i + 1] = argv[i];
+    ret[n + 1] = 0;
+    config->args = ret;
 }
 
 void config_verbose(const struct config *config, const char *fmt, ...) {
@@ -505,8 +542,7 @@ bool reply(const struct config *config, const char *room, const char *input) {
         close(in[1]);
         close(out[0]);
         close(err[0]);
-        const char *cargv[] = {"machinatrix", 0};
-        return exec(cargv, in[0], out[1], err[1]);
+        return exec(config->args, in[0], out[1], err[1]);
     }
     close(in[0]);
     close(out[1]);
