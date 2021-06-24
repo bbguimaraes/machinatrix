@@ -426,30 +426,24 @@ bool config_record_command(
 
 bool cmd_help(const struct config *config, const char *const *argv) {
     (void)config;
-    if(*argv) {
-        log_err("command accepts no arguments\n");
-        return false;
-    }
+    if(argv[0])
+        return log_err("command accepts no arguments\n"), false;
     usage(stdout);
     return true;
 }
 
 bool cmd_ping(const struct config *config, const char *const *argv) {
     (void)config;
-    if(*argv) {
-        log_err("command accepts no arguments\n");
-        return false;
-    }
+    if(argv[0])
+        return log_err("command accepts no arguments\n"), false;
     printf("pong\n");
     return true;
 }
 
 bool cmd_word(const struct config *config, const char *const *argv) {
     (void)config;
-    if(*argv) {
-        log_err("command accepts no arguments\n");
-        return false;
-    }
+    if(argv[0])
+        return log_err("command accepts no arguments\n"), false;
     pid_t pid = fork();
     if(pid == -1) {
         log_errno("fork");
@@ -464,10 +458,8 @@ bool cmd_word(const struct config *config, const char *const *argv) {
 
 bool cmd_abbr(const struct config *config, const char *const *argv) {
     (void)config;
-    if(!*argv) {
-        log_err("command requires one argument\n");
-        return false;
-    }
+    if(!argv[0] || argv[1])
+        return log_err("command takes one argument\n"), false;
     char *buffer = NULL;
     size_t buffer_len = 0;
     for(const char *c = argv[0]; *c; ++c) {
@@ -521,6 +513,8 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
 
 bool cmd_damn(const struct config *config, const char *const *argv) {
     (void)config;
+    if(argv[0])
+        return log_err("command accepts no arguments\n"), false;
     int fds[2];
     if(pipe(fds) == -1) {
         log_errno("pipe");
@@ -562,10 +556,8 @@ bool cmd_damn(const struct config *config, const char *const *argv) {
 
 bool cmd_parl(const struct config *config, const char *const *argv) {
     (void)config;
-    if(*argv) {
-        log_err("command accepts no arguments\n");
-        return false;
-    }
+    if(argv[0])
+        return log_err("command accepts no arguments\n"), false;
     static const char *v[] = {
         "A terminological inexactitude [citation needed].\n",
         "Liar.\n-- Australia, 1997\n",
@@ -687,10 +679,8 @@ bool cmd_parl(const struct config *config, const char *const *argv) {
 
 bool cmd_bard(const struct config *config, const char *const *argv) {
     (void)config;
-    if(*argv) {
-        log_err("command accepts no argument\n");
-        return false;
-    }
+    if(argv[0])
+        return log_err("command accepts no argument\n"), false;
     static const char *v[] = {
         "A most notable coward, an infinite and endless liar, an hourly"
         " promise breaker, the owner of no one good quality.\n"
@@ -820,10 +810,8 @@ bool cmd_bard(const struct config *config, const char *const *argv) {
 }
 
 bool cmd_dlpo(const struct config *config, const char *const *argv) {
-    if(!*argv) {
-        log_err("command requires an argument\n");
-        return false;
-    }
+    if(!argv[0] || argv[1])
+        return log_err("command takes one argument\n"), false;
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, DLPO_BASE "/", *argv))
         return false;
@@ -859,10 +847,8 @@ cleanup:
 }
 
 bool cmd_wikt(const struct config *config, const char *const *argv) {
-    if(!*argv) {
-        log_err("command requires an argument\n");
-        return false;
-    }
+    if(!argv[0] || argv[1])
+        return log_err("command takes one argument\n"), false;
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
@@ -910,10 +896,8 @@ cleanup:
 }
 
 bool cmd_tr(const struct config *config, const char *const *argv) {
-    if(!*argv) {
-        log_err("command requires an argument");
-        return false;
-    }
+    if(!argv[0] || argv[1])
+        return log_err("command takes one argument\n"), false;
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
@@ -1012,9 +996,8 @@ end:
 }
 
 bool cmd_stats(const struct config *config, const char *const *argv) {
-    (void)config;
-    if(*argv)
-        return log_err("command accepts no argument\n"), false;
+    if(argv[0])
+        return log_err("command takes one argument\n"), false;
     return stats_file(config) && stats_numeraria(config);
 }
 
