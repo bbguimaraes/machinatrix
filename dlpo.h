@@ -9,9 +9,7 @@
 
 #include <tidy.h>
 
-/**
- * Base URL for the service.
- */
+/** Base URL for the service. */
 #define DLPO_BASE "https://dicionario.priberam.org"
 
 /**
