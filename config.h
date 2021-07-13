@@ -35,36 +35,20 @@
  * Can be safely zero-initialized.
  */
 struct mtrix_config {
-    /**
-     * Whether the `help` command was requested.
-     */
+    /** Whether the `help` command was requested. */
     bool help;
-    /**
-     * Whether verbose logging was requested.
-     */
+    /** Whether verbose logging was requested. */
     bool verbose;
-    /**
-     * Whether dry-run mode was requested.
-     */
+    /** Whether dry-run mode was requested. */
     bool dry;
-    /**
-     * Matrix server URL.
-     */
+    /** Matrix server URL. */
     char server[MAX_SERVER];
-    /**
-     * Matrix access token.
-     */
+    /** Matrix access token. */
     char token[MAX_TOKEN];
-    /**
-     * User name used to send messages, in the form `@username:server`.
-     */
+    /** User name used to send messages, in the form `@username:server`. */
     char user[MAX_USER];
-    /**
-     * Short version of the user name, stripped of the `@` sign and server.
-     */
+    /** Short version of the user name, stripped of the `@` sign and server. */
     char short_user[MAX_USER];
-    /**
-     * Last batch received from the Matrix server.
-     */
+    /** Last batch received from the Matrix server. */
     char batch[MAX_BATCH];
 };

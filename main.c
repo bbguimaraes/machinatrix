@@ -49,37 +49,23 @@ struct config {
     } input;
 };
 
-/**
- * To be filled by `argv[0]` later, for logging.
- */
+/** To be filled by `argv[0]` later, for logging. */
 const char *PROG_NAME = NULL;
 
-/**
- * Set while processing a command.
- */
+/** Set while processing a command. */
 const char *CMD_NAME = NULL;
 
-/**
- * Dictionary file used for commands that require a list of words.
- */
+/** Dictionary file used for commands that require a list of words. */
 #define DICT_FILE "/usr/share/dict/words"
 
-/**
- * Function that handles a command.
- */
+/** Function that handles a command. */
 typedef bool mtrix_cmd_f(const struct config*, const char *const*);
 
-/**
- * Structure that associates a \ref mtrix_cmd_f to a command.
- */
+/** Structure that associates a \ref mtrix_cmd_f to a command. */
 typedef struct {
-    /**
-     * Command name.
-     */
+    /** Command name. */
     const char *name;
-    /**
-     * Function that handles the command.
-     */
+    /** Function that handles the command. */
     mtrix_cmd_f *f;
 } mtrix_cmd;
 
@@ -91,19 +77,13 @@ struct stats {
     int dlpo;
 };
 
-/**
- * Program entry point.
- */
+/** Program entry point. */
 int main(int argc, const char *const *argv);
 
-/**
- * Parses command-line arguments and fills `config`.
- */
+/** Parses command-line arguments and fills `config`. */
 static bool parse_args(int argc, char *const **argv, struct config *config);
 
-/**
- * Prints a usage message.
- */
+/** Prints a usage message. */
 static void usage(FILE *f);
 
 /** Initializes values in `config`. */
@@ -119,14 +99,10 @@ static bool config_destroy(struct config *config);
 static bool config_record_command(
     const struct config *config, const char *const *argv);
 
-/**
- * Handles a command passed via the command line.
- */
+/** Handles a command passed via the command line. */
 static bool handle_cmd(const struct config *config, const char *const *argv);
 
-/**
- * Handles commands read as lines from a file.
- */
+/** Handles commands read as lines from a file. */
 static bool handle_file(const struct config *config, FILE *f);
 
 /**
@@ -137,59 +113,37 @@ static bool handle_file(const struct config *config, FILE *f);
  */
 static void str_to_args(char *str, size_t max_args, char **argv);
 
-/**
- * Implements the `help` command.
- */
+/** Implements the `help` command. */
 static bool cmd_help(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `ping` command.
- */
+/** Implements the `ping` command. */
 static bool cmd_ping(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `word` command.
- */
+/** Implements the `word` command. */
 static bool cmd_word(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `abbr` command.
- */
+/** Implements the `abbr` command. */
 static bool cmd_abbr(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `damn` command.
- */
+/** Implements the `damn` command. */
 static bool cmd_damn(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `parl` command.
- */
+/** Implements the `parl` command. */
 static bool cmd_parl(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `bard` command.
- */
+/** Implements the `bard` command. */
 static bool cmd_bard(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `dlpo` command.
- */
+/** Implements the `dlpo` command. */
 static bool cmd_dlpo(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `wikt` command.
- */
+/** Implements the `wikt` command. */
 static bool cmd_wikt(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `tr` command.
- */
+/** Implements the `tr` command. */
 static bool cmd_tr(const struct config *config, const char *const *argv);
 
-/**
- * Implements the `stats` command.
- */
+/** Implements the `stats` command. */
 static bool cmd_stats(const struct config *config, const char *const *argv);
 
 /** Increments the count on wikt and dlpo lookups. */
