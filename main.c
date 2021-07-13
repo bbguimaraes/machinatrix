@@ -34,11 +34,17 @@ enum {
 
 /** `machinatrix`-specific configuration. */
 struct config {
+    /** Shared configuration fields. */
     struct mtrix_config c;
+    /** Socket to communicate with `numeraria`, if enabled. */
     int numeraria_fd;
+    /** Fields read from the command line. */
     struct {
+        /** Optional path to the statistics file. */
         char stats_file[MAX_PATH];
+        /** Optional address of the numeraria server socket. */
         char numeraria_socket[MAX_PATH];
+        /** Optional path of the numeraria server Unix socket. */
         char numeraria_unix[MAX_UNIX_PATH];
     } input;
 };
@@ -77,7 +83,13 @@ typedef struct {
     mtrix_cmd_f *f;
 } mtrix_cmd;
 
-struct stats { int wikt, dlpo; };
+/** Accumulates lookup statistics. */
+struct stats {
+    /** Number of Wiktionary lookups. */
+    int wikt;
+    /** Number of DLPO lookups. */
+    int dlpo;
+};
 
 /**
  * Program entry point.

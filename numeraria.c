@@ -52,6 +52,7 @@ enum {
 
 /** `numeraria` global configuration. */
 struct config {
+    /** \see HELP_FLAG, \see VERBOSE_FLAG */
     uint8_t flags;
     /** TCP listening socket, if required. */
     int socket_fd;
@@ -65,6 +66,7 @@ struct config {
     struct pollfd fds[MAX_CONN];
     /** Database connection. */
     sqlite3 *sqlite;
+    /** Fields read from the command line. */
     struct {
         uint8_t flags;
         /** SQLite database path (`:memory:` is used if not set). */
