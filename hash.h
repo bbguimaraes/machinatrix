@@ -8,7 +8,9 @@
 
 typedef uint64_t mtrix_hash;
 
+/** Wraps a value with methods to compute hashes of several types. */
 struct mtrix_hasher {
+    /** Final hashed value. */
     mtrix_hash h;
 };
 
