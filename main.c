@@ -159,7 +159,6 @@ static bool stats_numeraria(const struct config *config);
  * Maps a command name to the function that handles it.
  * Terminated by a `{NULL, NULL}` entry.
  */
-// clang-format off
 mtrix_cmd COMMANDS[] = {
     {"help", cmd_help},
     {"ping", cmd_ping},
@@ -174,7 +173,6 @@ mtrix_cmd COMMANDS[] = {
     {"stats", cmd_stats},
     {NULL, NULL},
 };
-// clang-format on
 
 int main(int argc, const char *const *argv) {
     log_set(stderr);

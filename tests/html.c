@@ -95,7 +95,6 @@ static bool test_find_attr() {
 }
 
 static bool test_trim_tag() {
-    // clang-format off
 #define CASE(x, y) {sizeof(x) - 1, sizeof(y) - 1, x, y}
     const struct {
         size_t in_len, out_len;
@@ -110,7 +109,6 @@ static bool test_trim_tag() {
         CASE("<p>text</p", "text</p"),
         CASE("<p>text</p>", "text")};
 #undef CASE
-    // clang-format on
     bool ret = true;
     for(size_t i = 0, n = sizeof(t) / sizeof(*t); i < n; ++i) {
         assert(printf("\n  \"%s\" ", t[i].in) > 0);
