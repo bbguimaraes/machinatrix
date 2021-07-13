@@ -34,7 +34,6 @@ static bool test_log(void) {
 }
 
 static bool test_is_prefix() {
-    // clang-format off
     const struct {
         const char *prefix, *s;
         bool is_prefix;
@@ -47,7 +46,6 @@ static bool test_is_prefix() {
         {"000", "0", false},
         {"001", "000", false},
         {"111", "000", false}};
-    // clang-format on
     bool ret = true;
     for(size_t i = 0, n = sizeof(t) / sizeof(*t); i < n; ++i) {
         assert(printf("\n  \"%s\" \"%s\" ", t[i].prefix, t[i].s) > 0);
