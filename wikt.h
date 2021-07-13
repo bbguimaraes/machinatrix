@@ -9,22 +9,14 @@
 
 #include <tidy.h>
 
-/**
- * Base URL for the service.
- */
+/** Base URL for the service. */
 #define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
 
-/**
- * Relevant elements of a page.
- */
+/** Relevant elements of a page. */
 typedef struct {
-    /**
-     * Table-of-contents element.
-     */
+    /** Table-of-contents element. */
     TidyNode toc;
-    /**
-     * Main content element of the page.
-     */
+    /** Main content element of the page. */
     TidyNode contents;
 } wikt_page;
 
@@ -35,14 +27,10 @@ typedef struct {
  */
 bool wikt_parse_page(TidyDoc doc, wikt_page *p);
 
-/**
- * Finds the header of a translation element.
- */
+/** Finds the header of a translation element. */
 TidyNode wikt_translation_head(TidyNode node);
 
-/**
- * Finds the body of a translation element.
- */
+/** Finds the body of a translation element. */
 TidyNode wikt_translation_body(TidyNode node);
 
 /**

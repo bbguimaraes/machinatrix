@@ -11,34 +11,22 @@
 /** Maximum unix socket path length, based on Linux's maximum. */
 #define MTRIX_MAX_UNIX_PATH ((size_t)108U)
 
-/**
- * Maximum length for URLs built by \ref build_url.
- */
+/** Maximum length for URLs built by \ref build_url. */
 #define MTRIX_MAX_URL_LEN ((size_t)1024U)
 
-/**
- * Maximum number of command arguments (excluding the command name).
- */
+/** Maximum number of command arguments (excluding the command name). */
 #define MTRIX_MAX_ARGS ((size_t)1U)
 
-/**
- * Helper macro for \ref build_url that creates a `const char *` array.
- */
+/** Helper macro for \ref build_url that creates a `const char *` array. */
 #define BUILD_URL(url, ...) build_url(url, (const char *[]){__VA_ARGS__, NULL})
 
-/**
- * Program name, used as a prefix for log messages if non-`NULL`.
- */
+/** Program name, used as a prefix for log messages if non-`NULL`. */
 extern const char *PROG_NAME;
 
-/**
- * Command name, used as a second prefix for log messages if non-`NULL`.
- */
+/** Command name, used as a second prefix for log messages if non-`NULL`. */
 extern const char *CMD_NAME;
 
-/**
- * Sets the output stream used by log functions and returns previous value.
- */
+/** Sets the output stream used by log functions and returns previous value. */
 FILE *log_set(FILE *f);
 
 /**
@@ -95,39 +83,25 @@ bool write_all(int fd, const void *p, size_t n);
  */
 bool exec(const char *const *argv, int fin, int fout, int ferr);
 
-/**
- * Waits for `n` child processes to exit.
- */
+/** Waits for `n` child processes to exit. */
 bool wait_n(size_t n);
 
-/**
- * Replaces new-line characters with spaces.
- */
+/** Replaces new-line characters with spaces. */
 void join_lines(unsigned char *b, unsigned char *e);
 
-/**
- * Resizable buffer used by several functions.
- */
+/** Resizable buffer used by several functions. */
 typedef struct {
-    /**
-     * Owning pointer to the dynamically-allocated data.
-     */
+    /** Owning pointer to the dynamically-allocated data. */
     char *p;
-    /**
-     * Size of the buffer pointed to by \ref p.
-     */
+    /** Size of the buffer pointed to by \ref p. */
     size_t s;
 } mtrix_buffer;
 
-/**
- * Copies data to the buffer, reallocating if necessary.
- */
+/** Copies data to the buffer, reallocating if necessary. */
 size_t mtrix_buffer_append(
     const char *p, size_t size, size_t n, mtrix_buffer *b);
 
-/**
- * Joins several URL parts into one, limited to \ref MTRIX_MAX_URL_LEN.
- */
+/** Joins several URL parts into one, limited to \ref MTRIX_MAX_URL_LEN. */
 bool build_url(char *url, const char *const *v);
 
 /**
@@ -138,21 +112,13 @@ bool build_url(char *url, const char *const *v);
  */
 bool request(const char *url, mtrix_buffer *b, bool verbose);
 
-/**
- * Data used for `POST` requests.
- */
+/** Data used for `POST` requests. */
 typedef struct {
-    /**
-     * Target URL.
-     */
+    /** Target URL. */
     const char *url;
-    /**
-     * Length of \ref data.
-     */
+    /** Length of \ref data. */
     size_t data_len;
-    /**
-     * `POST` payload.
-     */
+    /** `POST` payload. */
     const char *data;
 } post_request;
 

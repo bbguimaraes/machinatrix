@@ -19,39 +19,25 @@
 #include "config.h"
 #include "utils.h"
 
-/**
- * Root URL for the Matrix API.
- */
+/** Root URL for the Matrix API. */
 #define API_URL "/_matrix/client/r0"
 
-/**
- * URL for the synchronization endpoint.
- */
+/** URL for the synchronization endpoint. */
 #define SYNC_URL API_URL "/sync"
 
-/**
- * Limits the number of synchronization events to one.
- */
+/** Limits the number of synchronization events to one. */
 #define ROOM_FILTER "filter={\"room\":{\"timeline\":{\"limit\":1}}}"
 
-/**
- * URL for the rooms endpoint.
- */
+/** URL for the rooms endpoint. */
 #define ROOMS_URL API_URL "/rooms"
 
-/**
- * URL fragment for the send-message enpoint for a room.
- */
+/** URL fragment for the send-message enpoint for a room. */
 #define SEND_URL "/send/m.room.message"
 
-/**
- * Polling interval for the synchronization request.
- */
+/** Polling interval for the synchronization request. */
 #define SYNC_INTERVAL_MS_STR "30000"
 
-/**
- * Sets the polling interval to \ref SYNC_INTERVAL_MS_STR.
- */
+/** Sets the polling interval to \ref SYNC_INTERVAL_MS_STR. */
 #define TIMEOUT_PARAM "timeout=" SYNC_INTERVAL_MS_STR
 
 /**
@@ -61,9 +47,7 @@
 #define URL_PARTS(c, ...) \
     (c)->server, __VA_ARGS__, "access_token=", (c)->token
 
-/**
- * Builds a URL using \ref URL_PARTS.
- */
+/** Builds a URL using \ref URL_PARTS. */
 #define BUILD_MATRIX_URL(c, url, ...) \
     BUILD_URL(url, URL_PARTS((c), __VA_ARGS__))
 
@@ -73,35 +57,23 @@ struct config {
     const char **args;
 };
 
-/**
- * To be filled by `argv[0]` later, for logging.
- */
+/** To be filled by `argv[0]` later, for logging. */
 const char *PROG_NAME = NULL;
 
-/**
- * Always null.
- */
+/** Always null. */
 const char *CMD_NAME = NULL;
 
-/**
- * Program entry point.
- */
+/** Program entry point. */
 int main(int argc, const char *const *argv);
 
-/**
- * Parses command-line arguments and fills `config`.
- */
+/** Parses command-line arguments and fills `config`. */
 static bool parse_args(
     int *argc, const char *const **argv, struct config *config);
 
-/**
- * Prints a usage message.
- */
+/** Prints a usage message. */
 static void usage(FILE *f);
 
-/**
- * Extracts the short user name from a `@user:server` string.
- */
+/** Extracts the short user name from a `@user:server` string. */
 static bool short_username(const char *user, char *out);
 
 /**
@@ -120,66 +92,42 @@ static void config_set_args(struct config *config, const char *const *argv);
 /** Logs a message if verbose output was requested. */
 static void config_verbose(const struct config *config, const char *fmt, ...);
 
-/**
- * Shortcut for `cJSON_GetObjectItemCaseSensitive.
- */
+/** Shortcut for `cJSON_GetObjectItemCaseSensitive. */
 static cJSON *get_item(const cJSON *j, const char *k);
 
-/**
- * Fetches the inital batch for synchronization.
- */
+/** Fetches the inital batch for synchronization. */
 static bool init_batch(const struct config *config, char *batch);
 
-/**
- * Extracts the next batch from a server response.
- */
+/** Extracts the next batch from a server response. */
 static bool get_next_batch(cJSON *j, char *batch);
 
-/**
- * Main request/response loop.
- */
+/** Main request/response loop. */
 static bool loop(const struct config *config, char *batch);
 
-/**
- * Parses a string as JSON.
- */
+/** Parses a string as JSON. */
 static cJSON *parse_json(const char *s);
 
-/**
- * Handles a single request.
- */
+/** Handles a single request. */
 static void handle_request(
     const struct config *config, cJSON *root, size_t user_len);
 
-/**
- * Checks that an event has the expected type.
- */
+/** Checks that an event has the expected type. */
 static bool check_event_type(const cJSON *event, const char *value);
 
-/**
- * Finds the event body, if it contains one.
- */
+/** Finds the event body, if it contains one. */
 static const char *event_body(const cJSON *event);
 
-/**
- * Finds the event sender, if it contains one.
- */
+/** Finds the event sender, if it contains one. */
 static const char *event_sender(const cJSON *event);
 
-/**
- * Checks if the a user was mentioned.
- */
+/** Checks if the a user was mentioned. */
 static bool check_mention(const char *text, const char *user);
 
-/**
- * Invokes the main program and sends a reply to the room.
- */
+/** Invokes the main program and sends a reply to the room. */
 static bool reply(
     const struct config *config, const char *room, const char *input);
 
-/**
- * Sends a message to the room.
- */
+/** Sends a message to the room. */
 static bool send_msg(
     const struct config *config, const char *room, const char *msg);
 
