@@ -34,7 +34,8 @@ bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node) {
             log_err("definition not found\n");
             return false;
         }
-        if(strcmp(tidyNodeGetName(node), "div") != 0)
+        const char *const name = tidyNodeGetName(node);
+        if(!name || strcmp(name, "div") != 0)
             continue;
         {
             TidyAttr id = find_attr(node, "id");
