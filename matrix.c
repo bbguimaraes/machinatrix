@@ -108,7 +108,7 @@ static bool loop(const struct config *config, char *batch);
 static cJSON *parse_json(const char *s);
 
 /** Handles a single request. */
-static void handle_request(
+static bool handle_request(
     const struct config *config, cJSON *root, size_t user_len);
 
 /** Checks that an event has the expected type. */
@@ -381,7 +381,7 @@ bool loop(const struct config *config, char *batch) {
         {URL_PARTS(&config->c, root, batch, "&"), NULL};
     if(!build_url(url, url_parts))
         return false;
-    size_t user_len = strlen(config->c.short_user);
+    const size_t user_len = strlen(config->c.short_user);
     mtrix_buffer buffer = {0};
     cJSON *req = NULL;
     for(;;) {
@@ -395,7 +395,8 @@ bool loop(const struct config *config, char *batch) {
             break;
         if(!get_next_batch(req, batch))
             break;
-        handle_request(config, req, user_len);
+        if(!handle_request(config, req, user_len))
+            break;
         const time_t dt = time(NULL) - start;
         config_verbose(config, "elapsed: %lds\n", dt);
     }
@@ -404,7 +405,8 @@ bool loop(const struct config *config, char *batch) {
     return false;
 }
 
-void handle_request(const struct config *config, cJSON *root, size_t user_len) {
+bool handle_request(const struct config *config, cJSON *root, size_t user_len) {
+    bool ret = true;
     const cJSON *const join = get_item(get_item(root, "rooms"), "join");
     const cJSON *room = NULL;
     cJSON_ArrayForEach(room, join) {
@@ -431,12 +433,10 @@ void handle_request(const struct config *config, cJSON *root, size_t user_len) {
                 config_verbose(config, "skipping message: not mentioned\n");
                 continue;
             }
-            if(!reply(config, room->string, text + user_len + 1)) {
-                // TODO
-            }
-            free(output.p);
+            ret = reply(config, room->string, text + user_len + 1) && ret;
         }
     }
+    return true;
 }
 
 cJSON *parse_json(const char *s) {
