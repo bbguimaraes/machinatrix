@@ -580,7 +580,7 @@ bool process_input(
     in[1] = -1;
     if(!read_output(child_out, &msg))
         goto cleanup;
-    if(!wait_n(1)) {
+    if(!wait_n(1, &pid)) {
         free(msg.p);
         msg = (mtrix_buffer){0};
         const char err[] = "error: ";

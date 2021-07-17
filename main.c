@@ -417,7 +417,7 @@ bool cmd_word(const struct config *config, const char *const *argv) {
         return exec(
             (const char *[]){"shuf", "-n", "1", DICT_FILE, 0},
             -1, -1, -1);
-    return wait_n(1);
+    return wait_n(1, &pid);
 }
 
 bool cmd_abbr(const struct config *config, const char *const *argv) {
@@ -432,12 +432,13 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
             log_errno("pipe");
             return false;
         }
-        pid_t pid0 = fork();
-        if(pid0 == -1) {
+        pid_t pids[2] = {0};
+        pids[0] = fork();
+        if(pids[0] == -1) {
             log_errno("fork");
             return false;
         }
-        if(!pid0) {
+        if(!pids[0]) {
             close(fds[0][0]);
             const char *cargv[] = {"look", 0, 0};
             char arg[] = {*c, '\0'};
@@ -449,8 +450,8 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
             log_errno("pipe");
             return false;
         }
-        pid_t pid1 = fork();
-        if(!pid1) {
+        pids[1] = fork();
+        if(!pids[1]) {
             close(fds[1][0]);
             const char *cargv[] = {"shuf", "-n", "1", 0};
             return exec(cargv, fds[0][0], fds[1][1], -1);
@@ -468,7 +469,7 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
         if(buffer[len - 1] == '\n')
             buffer[len - 1] = '\0';
         printf("%s%s", c != argv[0] ? " " : "", buffer);
-        if(!wait_n(2))
+        if(!wait_n(2, pids))
             return false;
     }
     printf("\n");
@@ -515,7 +516,7 @@ bool cmd_damn(const struct config *config, const char *const *argv) {
     printf("!\n");
     if(buffer)
         free(buffer);
-    return wait_n(1);
+    return wait_n(1, &pid);
 }
 
 bool cmd_parl(const struct config *config, const char *const *argv) {
