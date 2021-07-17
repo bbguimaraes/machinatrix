@@ -159,8 +159,8 @@ int main(int argc, const char *const *argv) {
         goto end;
     }
     if(config.c.verbose) {
-        printf("Using server: %s\n", config.c.server);
-        printf("Using user: %s\n", config.c.user);
+        log_err("using server: %s\n", config.c.server);
+        log_err("using user: %s\n", config.c.user);
     }
     char batch[MAX_BATCH];
     if(*config.c.batch) {
@@ -168,7 +168,7 @@ int main(int argc, const char *const *argv) {
         strcpy(batch, config.c.batch);
     } else if(!init_batch(&config, batch))
         goto end;
-    config_verbose(&config, "Using batch: %s\n", batch);
+    config_verbose(&config, "using batch: %s\n", batch);
     if(!loop(&config, batch))
         goto end;
     ret = true;
@@ -353,7 +353,7 @@ bool init_batch(const struct config *config, char *batch) {
     }
     if(!get_next_batch(root, batch))
         ret = false;
-    config_verbose(config, "Next batch: %s\n", batch);
+    config_verbose(config, "next batch: %s\n", batch);
 cleanup:
     cJSON_Delete(root);
     return ret;
@@ -397,7 +397,7 @@ bool loop(const struct config *config, char *batch) {
             break;
         handle_request(config, req, user_len);
         const time_t dt = time(NULL) - start;
-        config_verbose(config, "Elapsed: %lds\n", dt);
+        config_verbose(config, "elapsed: %lds\n", dt);
     }
     free(buffer.p);
     cJSON_Delete(req);
@@ -419,16 +419,16 @@ void handle_request(const struct config *config, cJSON *root, size_t user_len) {
             const char *const sender = event_sender(event);
             if(!sender) {
                 config_verbose(
-                    config, "Skipping message without sender: %s\n", text);
+                    config, "skipping message without sender: %s\n", text);
                 continue;
             }
-            config_verbose(config, "Message (from %s): %s\n", sender, text);
+            config_verbose(config, "message (from %s): %s\n", sender, text);
             if(strcmp(sender, config->c.user) == 0) {
-                config_verbose(config, "Skipping message from self\n");
+                config_verbose(config, "skipping message from self\n");
                 continue;
             }
             if(!check_mention(text, config->c.short_user)) {
-                config_verbose(config, "Skipping message: not mentioned\n");
+                config_verbose(config, "skipping message: not mentioned\n");
                 continue;
             }
             if(!reply(config, room->string, text + user_len + 1)) {
