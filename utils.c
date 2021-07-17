@@ -126,12 +126,11 @@ bool exec(const char *const *argv, int fin, int fout, int ferr) {
     return false;
 }
 
-bool wait_n(size_t n) {
+bool wait_n(size_t n, const pid_t *p) {
     bool ret = true;
-    while(n) {
+    for(size_t i = 0; i < n; ++i) {
         int status;
-        pid_t w = wait(&status);
-        if(w == -1) {
+        if(waitpid(p[i], &status, 0) == -1) {
             log_errno("wait");
             ret = false;
         } else if(WIFSIGNALED(status)) {
