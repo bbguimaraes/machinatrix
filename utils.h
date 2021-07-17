@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <sys/types.h>
+
 /** Maximum path length, arbitrarily chosen. */
 #define MTRIX_MAX_PATH ((size_t)1024U)
 
@@ -84,7 +86,7 @@ bool write_all(int fd, const void *p, size_t n);
 bool exec(const char *const *argv, int fin, int fout, int ferr);
 
 /** Waits for `n` child processes to exit. */
-bool wait_n(size_t n);
+bool wait_n(size_t n, const pid_t *p);
 
 /** Replaces new-line characters with spaces. */
 void join_lines(unsigned char *b, unsigned char *e);
