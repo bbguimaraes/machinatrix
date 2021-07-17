@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -51,10 +52,17 @@
 #define BUILD_MATRIX_URL(c, url, ...) \
     BUILD_URL(url, URL_PARTS((c), __VA_ARGS__))
 
+enum {
+    /** Filter mode was chosen. */
+    FILTER_FLAG = 1 << 0,
+};
+
 struct config {
     struct mtrix_config c;
     /** Extra `machinatrix` arguments, in `execvp` format. */
     const char **args;
+    /** Filter, etc. */
+    uint8_t flags;
 };
 
 /** To be filled by `argv[0]` later, for logging. */
@@ -101,6 +109,9 @@ static bool init_batch(const struct config *config, char *batch);
 /** Extracts the next batch from a server response. */
 static bool get_next_batch(cJSON *j, char *batch);
 
+/** Main request/response loop in filter mode. */
+static bool filter(const struct config *config, char *batch);
+
 /** Main request/response loop. */
 static bool loop(const struct config *config, char *batch);
 
@@ -109,7 +120,8 @@ static cJSON *parse_json(const char *s);
 
 /** Handles a single request. */
 static bool handle_request(
-    const struct config *config, cJSON *root, size_t user_len);
+    const struct config *config, cJSON *root, size_t user_len,
+    bool (*send_msg)(const struct config*, const char*, const char*));
 
 /** Checks that an event has the expected type. */
 static bool check_event_type(const cJSON *event, const char *value);
@@ -123,9 +135,13 @@ static const char *event_sender(const cJSON *event);
 /** Checks if the a user was mentioned. */
 static bool check_mention(const char *text, const char *user);
 
-/** Invokes the main program and sends a reply to the room. */
-static bool reply(
-    const struct config *config, const char *room, const char *input);
+/** Invokes the main program. */
+static bool process_input(
+    const struct config *config, const char *input, mtrix_buffer *output);
+
+/** Prints a message to stdout. */
+static bool print_msg(
+    const struct config *config, const char *room, const char *msg);
 
 /** Sends a message to the room. */
 static bool send_msg(
@@ -169,7 +185,10 @@ int main(int argc, const char *const *argv) {
     } else if(!init_batch(&config, batch))
         goto end;
     config_verbose(&config, "using batch: %s\n", batch);
-    if(!loop(&config, batch))
+    if(config.flags & FILTER_FLAG) {
+        if(!filter(&config, batch))
+            goto end;
+    } else if(!loop(&config, batch))
         goto end;
     ret = true;
 end:
@@ -178,7 +197,7 @@ end:
 }
 
 bool parse_args(int *argc, const char *const **argv, struct config *config) {
-    enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH };
+    enum { HELP, VERBOSE, DRY, SERVER, USER, TOKEN, BATCH, FILTER };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
         [HELP] = {"help", no_argument, 0, 'h'},
@@ -188,7 +207,8 @@ bool parse_args(int *argc, const char *const **argv, struct config *config) {
         [USER] = {"user", required_argument, 0, 0},
         [TOKEN] = {"token", required_argument, 0, 0},
         [BATCH] = {"batch", required_argument, 0, 0},
-        {0, 0, 0, 0},
+        [FILTER] = {"filter", no_argument, 0, 0},
+        {0},
     };
     for(;;) {
         int idx = 0;
@@ -224,6 +244,7 @@ bool parse_args(int *argc, const char *const **argv, struct config *config) {
             if(!copy_arg("batch", config->c.batch, optarg, MAX_BATCH))
                 return false;
             break;
+        case FILTER: config->flags |= FILTER_FLAG; break;
         default: return false;
         }
     }
@@ -246,6 +267,8 @@ void usage(FILE *f) {
         "        --user   <arg>     matrix user (required)\n"
         "        --token  <arg>     matrix token file (required)\n"
         "        --batch  <arg>     matrix batch file\n"
+        "        --filter           read message lines from stdin, write\n"
+        "                           responses to stdout\n"
         "\n"
         "Additional positional arguments are forwarded to `machinatrix`.\n",
         PROG_NAME);
@@ -374,6 +397,31 @@ bool get_next_batch(cJSON *j, char *batch) {
     return true;
 }
 
+bool filter(const struct config *config, char *batch) {
+    const size_t user_len = strlen(config->c.short_user);
+    mtrix_buffer buffer = {0};
+    cJSON *req = NULL;
+    bool ret = false;
+    for(;;) {
+        if(getline(&buffer.p, &buffer.s, stdin) == -1) {
+            if(ferror(stdin))
+                log_errno("getline");
+            else
+                ret = true;
+            break;
+        }
+        if(!(req = parse_json(buffer.p)))
+            break;
+        if(!get_next_batch(req, batch))
+            break;
+        if(!handle_request(config, req, user_len, print_msg))
+            break;
+    }
+    free(buffer.p);
+    cJSON_Delete(req);
+    return ret;
+}
+
 bool loop(const struct config *config, char *batch) {
     char url[MTRIX_MAX_URL_LEN];
     const char *const root = SYNC_URL "?" TIMEOUT_PARAM "&since=";
@@ -395,7 +443,7 @@ bool loop(const struct config *config, char *batch) {
             break;
         if(!get_next_batch(req, batch))
             break;
-        if(!handle_request(config, req, user_len))
+        if(!handle_request(config, req, user_len, send_msg))
             break;
         const time_t dt = time(NULL) - start;
         config_verbose(config, "elapsed: %lds\n", dt);
@@ -405,7 +453,10 @@ bool loop(const struct config *config, char *batch) {
     return false;
 }
 
-bool handle_request(const struct config *config, cJSON *root, size_t user_len) {
+bool handle_request(
+    const struct config *config, cJSON *root, size_t user_len,
+    bool (*send_msg)(const struct config*, const char*, const char*)
+) {
     bool ret = true;
     const cJSON *const join = get_item(get_item(root, "rooms"), "join");
     const cJSON *room = NULL;
@@ -433,7 +484,13 @@ bool handle_request(const struct config *config, cJSON *root, size_t user_len) {
                 config_verbose(config, "skipping message: not mentioned\n");
                 continue;
             }
-            ret = reply(config, room->string, text + user_len + 1) && ret;
+            mtrix_buffer output = {0};
+            if(!process_input(config, text + user_len + 1, &output)) {
+                ret = false;
+                continue;
+            }
+            ret = send_msg(config, room->string, output.p) && ret;
+            free(output.p);
         }
     }
     return true;
@@ -475,7 +532,9 @@ bool check_mention(const char *text, const char *user) {
     return colon && *colon == ':';
 }
 
-bool reply(const struct config *config, const char *room, const char *input) {
+bool process_input(
+    const struct config *config, const char *input, mtrix_buffer *output
+) {
     int in[2] = {-1, -1}, out[2] = {-1, -1}, err[2] = {-1, -1};
     FILE *child_in = NULL, *child_out = NULL, *child_err = NULL;
     mtrix_buffer msg = {0};
@@ -529,8 +588,6 @@ bool reply(const struct config *config, const char *room, const char *input) {
         if(!read_output(child_err, &msg))
             goto cleanup;
     }
-    if(!send_msg(config, room, msg.p))
-        goto cleanup;
     ret = true;
 cleanup:
     if(child_in) {
@@ -560,8 +617,14 @@ cleanup:
         log_errno("close");
         ret = false;
     }
-    free(msg.p);
+    *output = msg;
     return ret;
+}
+
+bool print_msg(const struct config *config, const char *room, const char *msg) {
+    (void)config;
+    printf("%s: %s", room, msg);
+    return true;
 }
 
 bool send_msg(const struct config *config, const char *room, const char *msg) {
