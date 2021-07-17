@@ -188,17 +188,6 @@ static bool test_wait_n_signal() {
     log_set(tmpfile());
     const pid_t pid0 = fork();
     if(!pid0)
-        exit(EXIT_FAILURE);
-    const pid_t pid1 = fork();
-    if(!pid1)
-        exit(EXIT_SUCCESS);
-    return ASSERT(!wait_n(2)) && CHECK_LOG("child exited: 1\n");
-}
-
-static bool test_wait_n_failure() {
-    log_set(tmpfile());
-    const pid_t pid0 = fork();
-    if(!pid0)
         pause();
     const pid_t pid1 = fork();
     if(!pid1)
@@ -208,6 +197,17 @@ static bool test_wait_n_failure() {
     char msg[] = "child killed by signal: 00\n";
     snprintf(msg + sizeof(msg) - 4, 4, "%2d\n", SIGTERM);
     return CHECK_LOG(msg) && ret;
+}
+
+static bool test_wait_n_failure() {
+    log_set(tmpfile());
+    const pid_t pid0 = fork();
+    if(!pid0)
+        exit(EXIT_FAILURE);
+    const pid_t pid1 = fork();
+    if(!pid1)
+        exit(EXIT_SUCCESS);
+    return ASSERT(!wait_n(2)) && CHECK_LOG("child exited: 1\n");
 }
 
 static bool test_wait_n() {
