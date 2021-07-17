@@ -141,7 +141,7 @@ bool wait_n(size_t n) {
         } else if(WIFEXITED(status)) {
             --n;
             if((status = WEXITSTATUS(status))) {
-                log_err("child exited: %d\n", WEXITSTATUS(status));
+                log_err("child exited: %d\n", status);
                 ret = false;
             }
         }

@@ -192,7 +192,7 @@ static bool test_wait_n_signal() {
     const pid_t pid1 = fork();
     if(!pid1)
         exit(EXIT_SUCCESS);
-    return ASSERT(!wait_n(2)) && CHECK_LOG("child exited: 0\n");
+    return ASSERT(!wait_n(2)) && CHECK_LOG("child exited: 1\n");
 }
 
 static bool test_wait_n_failure() {
