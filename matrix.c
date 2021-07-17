@@ -476,8 +476,9 @@ bool check_mention(const char *text, const char *user) {
 }
 
 bool reply(const struct config *config, const char *room, const char *input) {
-    int in[2] = {0}, out[2] = {0}, err[2] = {0};
+    int in[2] = {-1, -1}, out[2] = {-1, -1}, err[2] = {-1, -1};
     FILE *child_in = NULL, *child_out = NULL, *child_err = NULL;
+    mtrix_buffer msg = {0};
     bool ret = false;
     if(pipe(in) == -1) { log_errno("pipe"); goto cleanup; }
     if(pipe(out) == -1) { log_errno("pipe"); goto cleanup; }
@@ -491,7 +492,7 @@ bool reply(const struct config *config, const char *room, const char *input) {
         close(in[1]);
         close(out[0]);
         close(err[0]);
-        return exec(config->args, in[0], out[1], err[1]);
+        exit(!exec(config->args, in[0], out[1], err[1]));
     }
     close(in[0]);
     close(out[1]);
@@ -517,7 +518,7 @@ bool reply(const struct config *config, const char *room, const char *input) {
         goto cleanup;
     }
     child_in = 0;
-    mtrix_buffer msg = {0};
+    in[1] = -1;
     if(!read_output(child_out, &msg))
         goto cleanup;
     if(!wait_n(1)) {
@@ -532,24 +533,30 @@ bool reply(const struct config *config, const char *room, const char *input) {
         goto cleanup;
     ret = true;
 cleanup:
-    if(child_in && fclose(child_in)) {
-        log_errno("fclose");
-        ret = false;
-    } else if(in[0] && close(in[0]) == -1) {
+    if(child_in) {
+        if(fclose(child_in)) {
+            log_errno("fclose");
+            ret = false;
+        }
+    } else if(in[1] != -1 && close(in[1]) == -1) {
         log_errno("close");
         ret = false;
     }
-    if(child_out && fclose(child_out)) {
-        log_errno("fclose");
-        ret = false;
-    } else if(out[0] && close(out[0]) == -1) {
+    if(child_out) {
+        if(fclose(child_out)) {
+            log_errno("fclose");
+            ret = false;
+        }
+    } else if(out[0] != -1 && close(out[0]) == -1) {
         log_errno("close");
         ret = false;
     }
-    if(child_err && fclose(child_err)) {
-        log_errno("fclose");
-        ret = false;
-    } else if(err[0] && close(err[0]) == -1) {
+    if(child_err) {
+        if(fclose(child_err)) {
+            log_errno("fclose");
+            ret = false;
+        }
+    } else if(err[0] != -1 && close(err[0]) == -1) {
         log_errno("close");
         ret = false;
     }
