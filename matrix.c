@@ -434,6 +434,7 @@ void handle_request(const struct config *config, cJSON *root, size_t user_len) {
             if(!reply(config, room->string, text + user_len + 1)) {
                 // TODO
             }
+            free(output.p);
         }
     }
 }
