@@ -478,8 +478,8 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
 
 bool cmd_damn(const struct config *config, const char *const *argv) {
     (void)config;
-    if(argv[0])
-        return log_err("command accepts no arguments\n"), false;
+    if(argv[0] && argv[1])
+        return log_err("command accepts at most one argument\n"), false;
     int fds[2];
     if(pipe(fds) == -1) {
         log_errno("pipe");
