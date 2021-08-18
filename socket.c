@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <sys/un.h>
 
+#include "log.h"
 #include "utils.h"
 
 static_assert(

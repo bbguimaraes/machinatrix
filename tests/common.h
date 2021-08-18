@@ -1,8 +1,9 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
+#include "log.h"
 
 #define RUN(x) run(#x, (x))
 #define LOC() \

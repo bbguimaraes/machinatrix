@@ -3,6 +3,7 @@
 #include <tidybuffio.h>
 
 #include "html.h"
+#include "log.h"
 #include "utils.h"
 
 TidyNode dlpo_find_definitions(TidyNode node) {

@@ -1,1 +1,1 @@
-#include "tests/common.h"
+#include "common.h"

@@ -19,6 +19,7 @@
 #include <sqlite3.h>
 
 #include "hash.h"
+#include "log.h"
 #include "socket.h"
 #include "utils.h"
 
@@ -251,7 +252,7 @@ bool config_destroy(struct config *config) {
             log_errno("failed to close client fd");
             ret = false;
         }
-    sqlite3_close(config->sqlite);
+    ret = sqlite3_close(config->sqlite) == SQLITE_OK && ret;
     return ret;
 }
 

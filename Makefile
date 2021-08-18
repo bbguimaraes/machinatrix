@@ -1,7 +1,7 @@
 CPPFLAGS += -I. -D_POSIX_C_SOURCE=200809L
 CFLAGS += -std=c11 -O2 -Wall -Wextra -Wpedantic -Wconversion
 LDLIBS += -lcurl -ltidy -lcjson
-OUTPUT_OPTION += -MMD -MP
+OUTPUT_OPTION = -MMD -MP -o $@
 TESTS += tests/hash tests/html tests/utils
 
 headers = \
@@ -12,15 +12,24 @@ sources = \
 
 .PHONY: all check clean docs tidy
 all: machinatrix machinatrix_matrix numeraria
-machinatrix: dlpo.o hash.o html.o main.o numeraria_lib.o socket.o utils.o wikt.o
-machinatrix_matrix: matrix.o utils.o
-numeraria: numeraria.c socket.o utils.o -lsqlite3
+machinatrix: \
+	dlpo.o \
+	hash.o \
+	html.o \
+	log.o \
+	main.o \
+	numeraria_lib.o \
+	socket.o \
+	utils.o \
+	wikt.o
+machinatrix_matrix: log.o matrix.o utils.o
+numeraria: log.o numeraria.c socket.o utils.o -lsqlite3
 machinatrix machinatrix_matrix numeraria:
 	$(LINK.c) $^ $(LDLIBS) -o $@
 
 tests/hash: tests/hash.o
-tests/html: html.o utils.o tests/common.o tests/html.o
-tests/utils: utils.o tests/common.o tests/utils.o
+tests/html: html.o log.o utils.o tests/common.o tests/html.o
+tests/utils: log.o utils.o tests/common.o tests/utils.o
 
 docs:
 	doxygen

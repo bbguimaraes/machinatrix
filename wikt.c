@@ -3,6 +3,7 @@
 #include <tidybuffio.h>
 
 #include "html.h"
+#include "log.h"
 #include "utils.h"
 
 #define TOC_ID "toc"

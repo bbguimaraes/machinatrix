@@ -18,6 +18,7 @@
 #include <cjson/cJSON.h>
 
 #include "config.h"
+#include "log.h"
 #include "utils.h"
 
 /** Root URL for the Matrix API. */
