@@ -5,6 +5,7 @@
 #include <tidybuffio.h>
 
 #include "html.h"
+#include "log.h"
 #include "utils.h"
 
 #define CONTENTS_ID "mw-content-text"
