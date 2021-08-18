@@ -22,6 +22,7 @@
 #include "dlpo.h"
 #include "hash.h"
 #include "html.h"
+#include "log.h"
 #include "numeraria.h"
 #include "utils.h"
 #include "wikt.h"

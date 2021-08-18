@@ -8,6 +8,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "log.h"
 #include "socket.h"
 #include "utils.h"
 

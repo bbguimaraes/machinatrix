@@ -1,8 +1,6 @@
+#include "utils.h"
+
 #include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <curl/curl.h>
 #include <fcntl.h>
@@ -14,39 +12,7 @@
 #include <tidy.h>
 #include <tidybuffio.h>
 
-#include "utils.h"
-
-static FILE *LOG_OUT = NULL;
-
-FILE *log_set(FILE *f) {
-    FILE *ret = LOG_OUT;
-    LOG_OUT = f;
-    return ret;
-}
-
-void log_errv(const char *fmt, va_list argp) {
-    if(PROG_NAME)
-        fprintf(LOG_OUT, "%s: ", PROG_NAME);
-    if(CMD_NAME)
-        fprintf(LOG_OUT, "%s: ", CMD_NAME);
-    vfprintf(LOG_OUT, fmt, argp);
-}
-
-void log_err(const char *fmt, ...) {
-    va_list argp;
-    va_start(argp, fmt);
-    log_errv(fmt, argp);
-    va_end(argp);
-}
-
-void log_errno(const char *fmt, ...) {
-    va_list argp;
-    va_start(argp, fmt);
-    log_errv(fmt, argp);
-    va_end(argp);
-    fprintf(LOG_OUT, ": %s\n", strerror(errno));
-    errno = 0;
-}
+#include "log.h"
 
 char *is_prefix(const char *prefix, const char *s) {
     while(*prefix && *s)
@@ -67,60 +33,6 @@ bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src) {
         }
         if(!(*dst.p++ = *src++))
             break;
-    }
-    return true;
-}
-
-char *join_path(char v[static MTRIX_MAX_PATH], int n, ...) {
-    va_list args;
-    va_start(args, n);
-    char *p = v, *const e = v + MTRIX_MAX_PATH;
-    for(int i = 0; i != n; ++i) {
-        size_t ni = strlcpy(p, va_arg(args, const char*), (size_t)(e - p));
-        if(e[-1])
-            goto err;
-        p += ni - 1;
-    }
-    assert(p <= e);
-    assert(!e[-1]);
-    va_end(args);
-    return v;
-err:
-    va_end(args);
-    log_err("%s: path too long: %s\n", __func__, v);
-    return NULL;
-}
-
-FILE *open_or_create(const char *path, const char *flags) {
-    FILE *ret;
-    if(!(ret = fopen(path, "a")))
-        return log_errno("failed to open file %s", path), NULL;
-    if(fclose(ret) == -1)
-        return log_errno("failed to close file %s", path), NULL;
-    if(!(ret = fopen(path, flags)))
-        return log_errno("failed to open file %s", path), NULL;
-    return ret;
-}
-
-bool read_all(int fd, void *p, size_t n) {
-    while(n) {
-        const ssize_t nr = read(fd, p, n);
-        switch(nr) {
-        case -1: return log_errno("read"), false;
-        case 0: return log_err("short read\n"), false;
-        default: p = (char*)p + nr, n -= (size_t)nr;
-        }
-    }
-    return true;
-}
-
-bool write_all(int fd, const void *p, size_t n) {
-    while(n) {
-        const ssize_t nw = write(fd, p, n);
-        switch(nw) {
-        case -1: return log_errno("write"), false;
-        default: p = (char*)p + nw, n -= (size_t)nw;
-        }
     }
     return true;
 }

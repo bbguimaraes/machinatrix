@@ -22,15 +22,6 @@
 /** Helper macro for \ref build_url that creates a `const char *` array. */
 #define BUILD_URL(url, ...) build_url(url, (const char *[]){__VA_ARGS__, NULL})
 
-/** Program name, used as a prefix for log messages if non-`NULL`. */
-extern const char *PROG_NAME;
-
-/** Command name, used as a second prefix for log messages if non-`NULL`. */
-extern const char *CMD_NAME;
-
-/** Sets the output stream used by log functions and returns previous value. */
-FILE *log_set(FILE *f);
-
 /** Resizable buffer used by several functions. */
 struct mtrix_buffer {
     /** Owning pointer to the dynamically-allocated data. */
@@ -40,20 +31,6 @@ struct mtrix_buffer {
 };
 
 /**
- * Writes the printf-style message to the error output.
- * If non-null, \ref PROG_NAME and \ref CMD_NAME are prepended.
- */
-void log_err(const char *fmt, ...);
-
-/** \see log_err */
-void log_errv(const char *fmt, va_list argp);
-
-/**
- * Similar to \ref log_err, but also logs `strerror(errno)`.
- * `: %s\n` is appended, where `%s` is the result of `strerror(errno)`.  `errno`
- * is cleared.
- */
-void log_errno(const char *fmt, ...);
 
 /** See glibc's function. */
 static const char *strchrnul(const char *s, int c);
@@ -72,24 +49,6 @@ char *is_prefix(const char *prefix, const char *s);
  * Checks for non-emptiness and length are performed and errors are logged.
  */
 bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src);
-
-/** Concatenate \c n segments, with length checking. */
-char *join_path(char v[static MTRIX_MAX_PATH], int n, ...);
-
-/** Performs an \c open(2)s with \c O_CREAT followed by \c fopen. */
-FILE *open_or_create(const char *path, const char *flags);
-
-/**
- * Repeatedly calls \c read(2) until all data are read.
- * \returns \c true iff \c n bytes were read without error.
- */
-bool read_all(int fd, void *p, size_t n);
-
-/**
- * Repeatedly calls \c write(2) until all data are written.
- * \returns \c true iff \c n bytes were written without error.
- */
-bool write_all(int fd, const void *p, size_t n);
 
 /**
  * Executes a command with optional input/output/error redirection.
