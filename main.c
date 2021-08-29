@@ -110,8 +110,9 @@ static bool handle_file(const struct config *config, FILE *f);
  * \param str Input string, modified to include null terminators.
  * \param max_args Maximum length for `argv`, including the null terminator.
  * \param argv Populated with pointers to the null-terminated strings in `str`.
+ * \return \c false if \c str contains more than \c max_args
  */
-static void str_to_args(char *str, size_t max_args, char **argv);
+static bool str_to_args(char *str, size_t max_args, char **argv);
 
 /** Implements the `help` command. */
 static bool cmd_help(const struct config *config, const char *const *argv);
@@ -315,7 +316,11 @@ bool handle_file(const struct config *config, FILE *f) {
             break;
         enum { CMD = 1, TERM = 1, ARGV_LEN = CMD + MTRIX_MAX_ARGS + TERM };
         char *argv[ARGV_LEN] = {0};
-        str_to_args(buffer, CMD + MTRIX_MAX_ARGS, argv);
+        if(!str_to_args(buffer, CMD + MTRIX_MAX_ARGS, argv)) {
+            log_err("%s: too many arguments\n", argv[0]);
+            ret = false;
+            break;
+        }
         if(!*argv)
             continue;
         mtrix_cmd *cmd = COMMANDS;
@@ -338,7 +343,7 @@ bool handle_file(const struct config *config, FILE *f) {
     return ret;
 }
 
-void str_to_args(char *str, size_t max_args, char **argv) {
+bool str_to_args(char *str, size_t max_args, char **argv) {
     const char *d = " \n";
     size_t n = 0;
     char *saveptr = NULL, *arg = strtok_r(str, d, &saveptr);
@@ -346,6 +351,7 @@ void str_to_args(char *str, size_t max_args, char **argv) {
         argv[n++] = arg;
         arg = strtok_r(NULL, d, &saveptr);
     }
+    return n < max_args || !arg;
 }
 
 bool config_record_command(
