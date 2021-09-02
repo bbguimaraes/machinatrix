@@ -171,14 +171,13 @@ end:
 }
 
 bool parse_args(int *argc, char *const **argv, struct config *config) {
-    enum { DB_PATH, BIND, BIND_UNIX };
+    enum { DB_PATH, BIND };
     static const char *short_opts = "hv";
     static const struct option long_opts[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"db-path", required_argument, 0, DB_PATH},
         {"bind", required_argument, 0, BIND},
-        {"bind-unix", required_argument, 0, BIND_UNIX},
         {0},
     };
     for(;;) {
@@ -193,16 +192,17 @@ bool parse_args(int *argc, char *const **argv, struct config *config) {
             if(!copy_arg("db path", config->input.db_path, optarg, MAX_PATH))
                 return false;
             break;
-        case BIND:
-            if(!copy_arg("bind", config->input.socket_path, optarg, MAX_PATH))
+        case BIND: {
+            const char prefix[] = "unix:";
+            char *src = optarg, *dst = config->input.socket_path;
+            if(strncmp(src, prefix, sizeof(prefix) - 1) == 0) {
+                src += sizeof(prefix) - 1;
+                dst = config->input.unix_path;
+            }
+            if(!copy_arg("bind", dst, src, MAX_PATH))
                 return false;
             break;
-        case BIND_UNIX:
-            if(!copy_arg(
-                    "bind-unix", config->input.unix_path,
-                    optarg, MAX_UNIX_PATH))
-                return false;
-            break;
+        }
         default: return false;
         }
     }
@@ -223,8 +223,8 @@ void usage(FILE *f) {
         "    -v, --verbose          verbose output\n"
         "    --db-path              path to the database file (`:memory:` is\n"
         "                           used if not set)\n"
-        "    --bind-socket addr     bind TCP socket to `addr`\n"
-        "    --bind-unix-unix path  bind Unix socket at `path`\n"
+        "    --bind-socket addr     bind socket to `addr`, prefix path with\n"
+        "                           `unix:` to use a Unix domain socket\n"
         "\n"
         "If no --bind* argument is given, commands are read from stdin.\n",
         PROG_NAME);
