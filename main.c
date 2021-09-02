@@ -191,7 +191,7 @@ int main(int argc, const char *const *argv) {
 }
 
 bool parse_args(int argc, char *const **argv, struct config *config) {
-    enum { STATS_FILE, NUMERARIA_SOCKET, NUMERARIA_UNIX };
+    enum { STATS_FILE, NUMERARIA_SOCKET };
     static const char *short_opts = "hvn";
     static const struct option long_opts[] = {
         {"help", no_argument, 0, 'h'},
@@ -199,7 +199,6 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
         {"dry-run", no_argument, 0, 'n'},
         {"stats-file", required_argument, 0, STATS_FILE},
         {"numeraria-socket", required_argument, 0, NUMERARIA_SOCKET},
-        {"numeraria-unix", required_argument, 0, NUMERARIA_UNIX},
         {0, 0, 0, 0},
     };
     for(;;) {
@@ -216,18 +215,17 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
                     "stats file", config->input.stats_file, optarg, MAX_PATH))
                 return false;
             break;
-        case NUMERARIA_SOCKET:
-            if(!copy_arg(
-                    "numeraria socket", config->input.numeraria_socket,
-                    optarg, MAX_PATH))
+        case NUMERARIA_SOCKET: {
+            const char prefix[] = "unix:";
+            char *src = optarg, *dst = config->input.numeraria_socket;
+            if(strncmp(src, prefix, sizeof(prefix) - 1) == 0) {
+                src += sizeof(prefix) - 1;
+                dst = config->input.numeraria_unix;
+            }
+            if(!copy_arg("numeraria socket", dst, src, MAX_PATH))
                 return false;
             break;
-        case NUMERARIA_UNIX:
-            if(!copy_arg(
-                    "numeraria unix socket", config->input.numeraria_unix,
-                    optarg, MAX_UNIX_PATH))
-                return false;
-            break;
+        }
         default: return false;
         }
     }
