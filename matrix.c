@@ -157,7 +157,7 @@ int main(int argc, const char *const *argv) {
     if(!parse_args(&argc, &argv, &config))
         return 1;
     bool ret = false;
-    if(config.c.help) {
+    if(config.c.flags & MTRIX_CONFIG_HELP) {
         usage(stdout);
         ret = true;
         goto end;
@@ -174,7 +174,7 @@ int main(int argc, const char *const *argv) {
         log_err("no token specified\n");
         goto end;
     }
-    if(config.c.verbose) {
+    if(mtrix_config_verbose(&config.c)) {
         log_err("using server: %s\n", config.c.server);
         log_err("using user: %s\n", config.c.user);
     }
@@ -217,9 +217,9 @@ bool parse_args(int *argc, const char *const **argv, struct config *config) {
         if(c == -1)
             break;
         switch(c) {
-        case 'h': config->c.help = true; continue;
-        case 'v': config->c.verbose = true; continue;
-        case 'n': config->c.dry = true; continue;
+        case 'h': config->c.flags |= MTRIX_CONFIG_HELP; continue;
+        case 'v': config->c.flags |= MTRIX_CONFIG_VERBOSE; continue;
+        case 'n': config->c.flags |= MTRIX_CONFIG_DRY; continue;
         case 0: break;
         default: return false;
         }
@@ -346,7 +346,7 @@ void config_set_args(struct config *config, const char *const *argv) {
 }
 
 void config_verbose(const struct config *config, const char *fmt, ...) {
-    if(!config->c.verbose)
+    if(!mtrix_config_verbose(&config->c))
         return;
     va_list argp;
     va_start(argp, fmt);
@@ -360,7 +360,7 @@ bool init_batch(const struct config *config, char *batch) {
     if(!BUILD_MATRIX_URL(&config->c, url, SYNC_URL "?" ROOM_FILTER "&"))
         return false;
     mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, config->c.verbose)) {
+    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
     }
@@ -437,7 +437,7 @@ bool loop(const struct config *config, char *batch) {
         if(!build_url(url, url_parts))
             return false;
         buffer.s = 0;
-        if(!request(url, &buffer, config->c.verbose))
+        if(!request(url, &buffer, mtrix_config_verbose(&config->c)))
             break;
         if(!(req = parse_json(buffer.p)))
             break;
@@ -638,7 +638,7 @@ bool send_msg(const struct config *config, const char *room, const char *msg) {
     free(msg_json);
     mtrix_buffer resp = {NULL, 0};
     const post_request r = {.url = url, .data_len = strlen(data), .data = data};
-    const bool ret = post(r, config->c.verbose, &resp);
+    const bool ret = post(r, mtrix_config_verbose(&config->c), &resp);
     free(data);
     free(resp.p);
     return ret;

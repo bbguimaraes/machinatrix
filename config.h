@@ -30,17 +30,23 @@
  */
 #define MAX_BATCH ((size_t)512U)
 
+/** Configuration flags for mtrix_config. */
+enum mtrix_config_flag {
+    /** Whether the `help` command was requested. */
+    MTRIX_CONFIG_HELP = 1 << 0,
+    /** Whether verbose logging was requested. */
+    MTRIX_CONFIG_VERBOSE = 1 << 1,
+    /** Whether dry-run mode was requested. */
+    MTRIX_CONFIG_DRY = 1 << 2,
+};
+
 /**
  * Configuration structure used by all programs.
  * Can be safely zero-initialized.
  */
 struct mtrix_config {
-    /** Whether the `help` command was requested. */
-    bool help;
-    /** Whether verbose logging was requested. */
-    bool verbose;
-    /** Whether dry-run mode was requested. */
-    bool dry;
+    /** Configuration flags. */
+    uint8_t flags;
     /** Matrix server URL. */
     char server[MAX_SERVER];
     /** Matrix access token. */
@@ -52,3 +58,11 @@ struct mtrix_config {
     /** Last batch received from the Matrix server. */
     char batch[MAX_BATCH];
 };
+
+static inline bool mtrix_config_verbose(const struct mtrix_config *c) {
+    return c->flags & MTRIX_CONFIG_VERBOSE;
+}
+
+static inline bool mtrix_config_dry(const struct mtrix_config *c) {
+    return c->flags & MTRIX_CONFIG_DRY;
+}
