@@ -236,7 +236,7 @@ static bool test_join_lines() {
 }
 
 static bool test_mtrix_buffer_append() {
-    mtrix_buffer b = {.p = NULL, .s = 0};
+    struct mtrix_buffer b = {0};
     mtrix_buffer_append(NULL, 0, 0, &b);
     bool ret = ASSERT_EQ(b.s, 0);
     ret = ASSERT_EQ(b.p, NULL) && ret;

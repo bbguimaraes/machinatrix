@@ -92,16 +92,16 @@ bool wait_n(size_t n, const pid_t *p);
 void join_lines(unsigned char *b, unsigned char *e);
 
 /** Resizable buffer used by several functions. */
-typedef struct {
+struct mtrix_buffer {
     /** Owning pointer to the dynamically-allocated data. */
     char *p;
     /** Size of the buffer pointed to by \ref p. */
     size_t s;
-} mtrix_buffer;
+};
 
 /** Copies data to the buffer, reallocating if necessary. */
 size_t mtrix_buffer_append(
-    const char *p, size_t size, size_t n, mtrix_buffer *b);
+    const char *p, size_t size, size_t n, struct mtrix_buffer *b);
 
 /** Joins several URL parts into one, limited to \ref MTRIX_MAX_URL_LEN. */
 bool build_url(char *url, const char *const *v);
@@ -112,7 +112,7 @@ bool build_url(char *url, const char *const *v);
  * \param b Output buffer, resized as required.
  * \param verbose Emit debug output.
  */
-bool request(const char *url, mtrix_buffer *b, bool verbose);
+bool request(const char *url, struct mtrix_buffer *b, bool verbose);
 
 /** Data used for `POST` requests. */
 typedef struct {
@@ -130,4 +130,4 @@ typedef struct {
  * \param b Output buffer, resized as required.
  * \param verbose Emit debug output.
  */
-bool post(post_request r, bool verbose, mtrix_buffer *b);
+bool post(post_request r, bool verbose, struct mtrix_buffer *b);

@@ -162,7 +162,7 @@ size_t curl_write_cb(char *in, size_t size, size_t nmemb, TidyBuffer *out) {
 }
 
 size_t mtrix_buffer_append(
-    const char *p, size_t size, size_t n, mtrix_buffer *b
+    const char *p, size_t size, size_t n, struct mtrix_buffer *b
 ) {
     if(!size || !n)
         return 0;
@@ -205,7 +205,7 @@ bool build_url(char *url, const char *const *v) {
     return true;
 }
 
-static CURL *init_curl(const char *url, mtrix_buffer *b, bool verbose) {
+static CURL *init_curl(const char *url, struct mtrix_buffer *b, bool verbose) {
     CURL *curl = curl_easy_init();
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "machinatrix");
@@ -217,7 +217,7 @@ static CURL *init_curl(const char *url, mtrix_buffer *b, bool verbose) {
     return curl;
 }
 
-bool request(const char *url, mtrix_buffer *b, bool verbose) {
+bool request(const char *url, struct mtrix_buffer *b, bool verbose) {
     CURL *curl = init_curl(url, b, verbose);
     char err[CURL_ERROR_SIZE];
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, err);
@@ -232,7 +232,7 @@ bool request(const char *url, mtrix_buffer *b, bool verbose) {
     return ret == CURLE_OK;
 }
 
-bool post(post_request r, bool verbose, mtrix_buffer *b) {
+bool post(post_request r, bool verbose, struct mtrix_buffer *b) {
     CURL *curl = init_curl(r.url, b, verbose);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, r.data_len);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, r.data);
