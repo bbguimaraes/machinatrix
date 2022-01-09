@@ -212,11 +212,15 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
         case 'h': config->c.flags |= MTRIX_CONFIG_HELP; continue;
         case 'v': config->c.flags |= MTRIX_CONFIG_VERBOSE; continue;
         case 'n': config->c.flags |= MTRIX_CONFIG_DRY; continue;
-        case STATS_FILE:
-            if(!copy_arg(
-                    "stats file", config->input.stats_file, optarg, MAX_PATH))
+        case STATS_FILE: {
+            struct mtrix_buffer b = {
+                .p = config->input.stats_file,
+                .n = MAX_PATH,
+            };
+            if(!copy_arg("stats file", b, optarg))
                 return false;
             break;
+        }
         case NUMERARIA_SOCKET: {
             const char prefix[] = "unix:";
             char *src = optarg, *dst = config->input.numeraria_socket;
@@ -224,7 +228,8 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
                 src += sizeof(prefix) - 1;
                 dst = config->input.numeraria_unix;
             }
-            if(!copy_arg("numeraria socket", dst, src, MAX_PATH))
+            struct mtrix_buffer b = {.p = dst, .n = MAX_PATH};
+            if(!copy_arg("numeraria socket", b, src))
                 return false;
             break;
         }

@@ -86,10 +86,11 @@ static bool short_username(const char *user, char *out);
 
 /**
  * Reads the token from a file.
- * \param token Name of the file.  Replaced with the contents of the token.
- * \param max Maximum length for `token`, including the null terminator.
+ * \param b
+       Buffer with the name of the file and maximum token length (including the
+       null terminator).  Replaced with the contents of the token.
  */
-static bool read_token(char *token, size_t max);
+static bool read_token(struct mtrix_buffer b);
 
 /** Destructs `config`. */
 static void config_destroy(struct config *config);
@@ -225,26 +226,32 @@ bool parse_args(int *argc, const char *const **argv, struct config *config) {
         default: return false;
         }
         switch(idx) {
-        case SERVER:
-            if(!copy_arg("server name", config->c.server, optarg, MAX_SERVER))
+        case SERVER: {
+            struct mtrix_buffer b = {.p = config->c.server, .n = MAX_SERVER};
+            if(!copy_arg("server name", b, optarg))
                 return false;
             break;
-        case USER:
-            if(!copy_arg("user name", config->c.user, optarg, MAX_USER))
+        }
+        case USER: {
+            struct mtrix_buffer b = {.p = config->c.user, .n = MAX_USER};
+            if(!copy_arg("user name", b, optarg))
                 return false;
             if(!short_username(config->c.user, config->c.short_user))
                 return false;
             break;
-        case TOKEN:
-            if(!copy_arg("token", config->c.token, optarg, MAX_TOKEN))
-                return false;
-            if(!read_token(config->c.token, MAX_TOKEN))
-                return false;
-            break;
-        case BATCH:
-            if(!copy_arg("batch", config->c.batch, optarg, MAX_BATCH))
+        }
+        case TOKEN: {
+            struct mtrix_buffer b = {.p = config->c.token, .n = MAX_TOKEN};
+            if(!(copy_arg("token", b, optarg) && read_token(b)))
                 return false;
             break;
+        }
+        case BATCH: {
+            struct mtrix_buffer b = {.p = config->c.batch, .n = MAX_BATCH};
+            if(!copy_arg("batch", b, optarg))
+                return false;
+            break;
+        }
         case FILTER: config->flags |= FILTER_FLAG; break;
         default: return false;
         }
@@ -295,31 +302,31 @@ bool short_username(const char *user, char *out) {
     return true;
 }
 
-bool read_token(char *token, size_t max) {
+bool read_token(struct mtrix_buffer b) {
     bool ret = false;
-    FILE *f = fopen(token, "rb");
+    FILE *f = fopen(b.p, "rb");
     if(!f) {
-        log_errno("fopen: %s", token);
+        log_errno("fopen: %s", b.p);
         return false;
     }
-    char *p = token;
+    const char *const p = b.p;
     for(;;) {
-        size_t n = fread(p, 1, max, f);
+        size_t n = fread(b.p, 1, b.n, f);
         if(ferror(f)) {
             log_errno("fread");
             break;
         }
-        p += n;
-        max -= n;
-        if(!max) {
+        b.p += n;
+        b.n -= n;
+        if(!b.n) {
             log_err("token too long\n");
             break;
         }
         if(feof(f)) {
             ret = true;
-            *p-- = 0;
-            while(p >= token && *p == '\n')
-                *p-- = 0;
+            *b.p-- = 0;
+            while(p <= b.p && *b.p == '\n')
+                *b.p-- = 0;
             break;
         }
     }

@@ -31,6 +31,14 @@ extern const char *CMD_NAME;
 /** Sets the output stream used by log functions and returns previous value. */
 FILE *log_set(FILE *f);
 
+/** Resizable buffer used by several functions. */
+struct mtrix_buffer {
+    /** Owning pointer to the dynamically-allocated data. */
+    char *p;
+    /** Size of the buffer pointed to by \ref p. */
+    size_t n;
+};
+
 /**
  * Writes the printf-style message to the error output.
  * If non-null, \ref PROG_NAME and \ref CMD_NAME are prepended.
@@ -57,7 +65,7 @@ char *is_prefix(const char *prefix, const char *s);
  * Copies a value from an `argv`-style array.
  * Checks for non-emptiness and length are performed and errors are logged.
  */
-bool copy_arg(const char *name, char *dst, const char *src, size_t max);
+bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src);
 
 /** Performs an \c open(2)s with \c O_CREAT followed by \c fopen. */
 FILE *open_or_create(const char *path, const char *flags);
@@ -90,14 +98,6 @@ bool wait_n(size_t n, const pid_t *p);
 
 /** Replaces new-line characters with spaces. */
 void join_lines(unsigned char *b, unsigned char *e);
-
-/** Resizable buffer used by several functions. */
-struct mtrix_buffer {
-    /** Owning pointer to the dynamically-allocated data. */
-    char *p;
-    /** Size of the buffer pointed to by \ref p. */
-    size_t n;
-};
 
 /** Copies data to the buffer, reallocating if necessary. */
 size_t mtrix_buffer_append(
