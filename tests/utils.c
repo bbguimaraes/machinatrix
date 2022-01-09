@@ -238,19 +238,19 @@ static bool test_join_lines() {
 static bool test_mtrix_buffer_append() {
     struct mtrix_buffer b = {0};
     mtrix_buffer_append(NULL, 0, 0, &b);
-    bool ret = ASSERT_EQ(b.s, 0);
+    bool ret = ASSERT_EQ(b.n, 0);
     ret = ASSERT_EQ(b.p, NULL) && ret;
     char input[] = "0123";
     mtrix_buffer_append(input, 2, 1, &b);
     input[2] = 0;
-    ret = ASSERT_EQ(b.s, 2) && ret;
+    ret = ASSERT_EQ(b.n, 2) && ret;
     if(memcmp(b.p, input, 3) != 0) {
         fprintf(stderr, "unexpected content: %.*s\n", 2, input);
         ret = false;
     }
     input[2] = '2';
     mtrix_buffer_append(input + 2, 2, 1, &b);
-    ret = ASSERT_EQ(b.s, 4) && ret;
+    ret = ASSERT_EQ(b.n, 4) && ret;
     if(memcmp(b.p, input, 5) != 0) {
         fprintf(stderr, "unexpected content: %.*s\n", 2, input);
         ret = false;

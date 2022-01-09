@@ -170,18 +170,18 @@ size_t mtrix_buffer_append(
     if(!b->p) {
         b->p = malloc(r + 1);
         memcpy(b->p, p, r);
-        b->s = r;
+        b->n = r;
     } else {
-        char *n = realloc(b->p, b->s + r + 1);
+        char *n = realloc(b->p, b->n + r + 1);
         if(!n) {
             log_err("realloc\n");
             return 0;
         }
         b->p = n;
-        memcpy(b->p + b->s, p, r);
-        b->s += r;
+        memcpy(b->p + b->n, p, r);
+        b->n += r;
     }
-    b->p[b->s] = 0;
+    b->p[b->n] = 0;
     return r;
 }
 
