@@ -188,10 +188,12 @@ bool parse_args(int *argc, char *const **argv, struct config *config) {
         switch(c) {
         case 'h': config->input.flags |= HELP_FLAG; continue;
         case 'v': config->input.flags |= VERBOSE_FLAG; continue;
-        case DB_PATH:
-            if(!copy_arg("db path", config->input.db_path, optarg, MAX_PATH))
+        case DB_PATH: {
+            struct mtrix_buffer b = {.p = config->input.db_path, .n = MAX_PATH};
+            if(!copy_arg("db path", b, optarg))
                 return false;
             break;
+        }
         case BIND: {
             const char prefix[] = "unix:";
             char *src = optarg, *dst = config->input.socket_path;
@@ -199,7 +201,8 @@ bool parse_args(int *argc, char *const **argv, struct config *config) {
                 src += sizeof(prefix) - 1;
                 dst = config->input.unix_path;
             }
-            if(!copy_arg("bind", dst, src, MAX_PATH))
+            struct mtrix_buffer b = {.p = dst, .n = MAX_PATH};
+            if(!copy_arg("bind", b, src))
                 return false;
             break;
         }

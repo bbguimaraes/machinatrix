@@ -61,7 +61,7 @@ static bool test_is_prefix() {
 static bool test_copy_arg_empty() {
     log_set(tmpfile());
     const char *arg = "";
-    return ASSERT(!copy_arg("arg_name", NULL, arg, 0))
+    return ASSERT(!copy_arg("arg_name", (struct mtrix_buffer){0}, arg))
         && CHECK_LOG("empty arg_name specified\n");
 }
 
@@ -69,7 +69,8 @@ static bool test_copy_arg_too_long() {
     log_set(tmpfile());
     const char *arg = "01234567";
     char out[8] = {0};
-    return ASSERT(!copy_arg("arg_name", out, arg, 8))
+    struct mtrix_buffer b = {.p = out, .n = 8};
+    return ASSERT(!copy_arg("arg_name", b, arg))
         && ASSERT_STR_EQ_N(out, arg, sizeof(out))
         && CHECK_LOG("arg_name too long (>= 8)\n");
 }
@@ -78,7 +79,8 @@ static bool test_copy_arg() {
     log_set(tmpfile());
     const char *arg = "arg";
     char out[4];
-    return ASSERT(copy_arg("arg_name", out, arg, 4))
+    struct mtrix_buffer b = {.p = out, .n = 4};
+    return ASSERT(copy_arg("arg_name", b, arg))
         && ASSERT_EQ(strcmp(out, arg), 0);
 }
 

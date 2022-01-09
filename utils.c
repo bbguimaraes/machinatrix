@@ -55,17 +55,17 @@ char *is_prefix(const char *prefix, const char *s) {
     return *prefix ? NULL : (char *)s;
 }
 
-bool copy_arg(const char *name, char *dst, const char *src, size_t max) {
+bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src) {
     if(!*src) {
         log_err("empty %s specified\n", name);
         return false;
     }
-    for(const char *const end = dst + max;;) {
-        if(dst == end) {
-            log_err("%s too long (>= %lu)\n", name, max);
+    for(const char *const end = dst.p + dst.n;;) {
+        if(dst.p == end) {
+            log_err("%s too long (>= %lu)\n", name, dst.n);
             return false;
         }
-        if(!(*dst++ = *src++))
+        if(!(*dst.p++ = *src++))
             break;
     }
     return true;
