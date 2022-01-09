@@ -184,7 +184,7 @@ int main(int argc, const char *const *argv) {
     config_init(&config);
     if(!parse_args(argc, (char *const **)&argv, &config))
         return 1;
-    if(config.c.help)
+    if(config.c.flags & MTRIX_CONFIG_HELP)
         return usage(stdout), 0;
     return !(
         config_init_numeraria(&config)
@@ -209,9 +209,9 @@ bool parse_args(int argc, char *const **argv, struct config *config) {
         if(c == -1)
             break;
         switch(c) {
-        case 'h': config->c.help = true; continue;
-        case 'v': config->c.verbose = true; continue;
-        case 'n': config->c.dry = true; continue;
+        case 'h': config->c.flags |= MTRIX_CONFIG_HELP; continue;
+        case 'v': config->c.flags |= MTRIX_CONFIG_VERBOSE; continue;
+        case 'n': config->c.flags |= MTRIX_CONFIG_DRY; continue;
         case STATS_FILE:
             if(!copy_arg(
                     "stats file", config->input.stats_file, optarg, MAX_PATH))
@@ -795,12 +795,12 @@ bool cmd_dlpo(const struct config *config, const char *const *argv) {
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, DLPO_BASE "/", *argv))
         return false;
-    if(config->c.verbose)
+    if(mtrix_config_verbose(&config->c))
         printf("Looking up term: %s\n", url);
-    if(config->c.dry)
+    if(mtrix_config_dry(&config->c))
         return true;
     mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, config->c.verbose)) {
+    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
     }
@@ -832,12 +832,12 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
-    if(config->c.verbose)
+    if(mtrix_config_verbose(&config->c))
         printf("Looking up term: %s\n", url);
-    if(config->c.dry)
+    if(mtrix_config_dry(&config->c))
         return true;
     mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, config->c.verbose)) {
+    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
     }
@@ -881,12 +881,12 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
         return false;
-    if(config->c.verbose)
+    if(mtrix_config_verbose(&config->c))
         printf("Looking up term: %s\n", url);
-    if(config->c.dry)
+    if(mtrix_config_dry(&config->c))
         return true;
     mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, config->c.verbose)) {
+    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
     }
