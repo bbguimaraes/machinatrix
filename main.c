@@ -62,12 +62,14 @@ const char *CMD_NAME = NULL;
 typedef bool mtrix_cmd_f(const struct config*, const char *const*);
 
 /** Structure that associates a \ref mtrix_cmd_f to a command. */
-typedef struct {
+struct mtrix_cmd {
+    /** Hash of field `name`. */
+    uint64_t name_hash;
     /** Command name. */
     const char *name;
     /** Function that handles the command. */
     mtrix_cmd_f *f;
-} mtrix_cmd;
+};
 
 /** Accumulates lookup statistics. */
 struct stats {
@@ -160,19 +162,19 @@ static bool stats_numeraria(const struct config *config);
  * Maps a command name to the function that handles it.
  * Terminated by a `{NULL, NULL}` entry.
  */
-mtrix_cmd COMMANDS[] = {
-    {"help", cmd_help},
-    {"ping", cmd_ping},
-    {"word", cmd_word},
-    {"abbr", cmd_abbr},
-    {"damn", cmd_damn},
-    {"parl", cmd_parl},
-    {"bard", cmd_bard},
-    {"dlpo", cmd_dlpo},
-    {"wikt", cmd_wikt},
-    {"tr", cmd_tr},
-    {"stats", cmd_stats},
-    {NULL, NULL},
+struct mtrix_cmd COMMANDS[] = {
+    {0x00005979ab, "tr",    cmd_tr},
+    {0x017c93ee3c, "abbr",  cmd_abbr},
+    {0x017c94785e, "bard",  cmd_bard},
+    {0x017c959085, "damn",  cmd_damn},
+    {0x017c95bfb4, "dlpo",  cmd_dlpo},
+    {0x017c97d2ee, "help",  cmd_help},
+    {0x017c9c25b4, "parl",  cmd_parl},
+    {0x017c9c4733, "ping",  cmd_ping},
+    {0x017ca01d84, "wikt",  cmd_wikt},
+    {0x017ca037e1, "word",  cmd_word},
+    {0x3110614a14, "stats", cmd_stats},
+    {0},
 };
 
 int main(int argc, const char *const *argv) {
@@ -294,7 +296,7 @@ bool config_destroy(struct config *config) {
 
 bool handle_cmd(const struct config *config, const char *const *argv) {
     const char *name = *argv;
-    for(mtrix_cmd *cmd = COMMANDS; cmd->name; ++cmd)
+    for(struct mtrix_cmd *cmd = COMMANDS; cmd->name; ++cmd)
         if(!strcmp(name, cmd->name)) {
             CMD_NAME = name;
             return cmd->f(config, argv + 1)
@@ -309,6 +311,12 @@ bool handle_file(const struct config *config, FILE *f) {
     bool ret = true;
     char *buffer = NULL;
     size_t len = 0;
+#ifndef NDEBUG
+    for(struct mtrix_cmd *p = COMMANDS; p->name; ++p)
+        assert(mtrix_hash_str(p->name) == p->name_hash);
+    for(struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
+        assert(p[-1].name_hash < p->name_hash);
+#endif
     for(;;) {
         if(getline(&buffer, &len, f) == -1)
             break;
@@ -321,10 +329,13 @@ bool handle_file(const struct config *config, FILE *f) {
         }
         if(!*argv)
             continue;
-        mtrix_cmd *cmd = COMMANDS;
-        while(cmd->name && strcmp(*argv, cmd->name))
-            ++cmd;
-        if(!cmd->name) {
+        const mtrix_hash arg_hash = mtrix_hash_str(*argv);
+        static_assert(!offsetof(struct mtrix_cmd, name_hash));
+        struct mtrix_cmd *const cmd = bsearch(
+            &arg_hash, COMMANDS,
+            sizeof(COMMANDS) / sizeof(*COMMANDS) - 1, sizeof(*COMMANDS),
+            mtrix_hash_cmp);
+        if(!cmd) {
             log_err("unknown command: %s\n", *argv);
             ret = false;
             break;

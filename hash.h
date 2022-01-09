@@ -29,6 +29,9 @@ static inline struct mtrix_hasher mtrix_hasher_add_bytes(
 /** Equivalent to <tt>hasher_add_str(MTRIX_HASHER_INIT, s)</tt>. */
 static inline mtrix_hash mtrix_hash_str(const char *s);
 
+/** Comparison function for hashes as required by `bsearch`. */
+static inline int mtrix_hash_cmp(const void *lhs, const void *rhs);
+
 struct mtrix_hasher mtrix_hasher_add(struct mtrix_hasher h, char b) {
     return (struct mtrix_hasher){.h = ((h.h << 5) + h.h) + (uint64_t)b};
 }
@@ -51,6 +54,12 @@ struct mtrix_hasher mtrix_hasher_add_bytes(
 
 mtrix_hash mtrix_hash_str(const char *s) {
     return mtrix_hasher_add_str(MTRIX_HASHER_INIT, s).h;
+}
+
+int mtrix_hash_cmp(const void *lhs_p, const void *rhs_p) {
+    const mtrix_hash lhs = *(const mtrix_hash*)lhs_p;
+    const mtrix_hash rhs = *(const mtrix_hash*)rhs_p;
+    return lhs < rhs ? -1 : rhs < lhs ? 1 : 0;
 }
 
 #endif
