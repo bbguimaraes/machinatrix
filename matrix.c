@@ -404,7 +404,7 @@ bool filter(const struct config *config, char *batch) {
     cJSON *req = NULL;
     bool ret = false;
     for(;;) {
-        if(getline(&buffer.p, &buffer.s, stdin) == -1) {
+        if(getline(&buffer.p, &buffer.n, stdin) == -1) {
             if(ferror(stdin))
                 log_errno("getline");
             else
@@ -437,7 +437,7 @@ bool loop(const struct config *config, char *batch) {
         const time_t start = time(NULL);
         if(!build_url(url, url_parts))
             return false;
-        buffer.s = 0;
+        buffer.n = 0;
         if(!request(url, &buffer, mtrix_config_verbose(&config->c)))
             break;
         if(!(req = parse_json(buffer.p)))

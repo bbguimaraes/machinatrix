@@ -96,7 +96,7 @@ struct mtrix_buffer {
     /** Owning pointer to the dynamically-allocated data. */
     char *p;
     /** Size of the buffer pointed to by \ref p. */
-    size_t s;
+    size_t n;
 };
 
 /** Copies data to the buffer, reallocating if necessary. */
