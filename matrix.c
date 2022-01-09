@@ -137,7 +137,8 @@ static bool check_mention(const char *text, const char *user);
 
 /** Invokes the main program. */
 static bool process_input(
-    const struct config *config, const char *input, mtrix_buffer *output);
+    const struct config *config,
+    const char *input, struct mtrix_buffer *output);
 
 /** Prints a message to stdout. */
 static bool print_msg(
@@ -148,7 +149,7 @@ static bool send_msg(
     const struct config *config, const char *room, const char *msg);
 
 /** Consumes all output from `f`, appending it to `buf`. */
-static bool read_output(FILE *f, mtrix_buffer *buf);
+static bool read_output(FILE *f, struct mtrix_buffer *buf);
 
 int main(int argc, const char *const *argv) {
     log_set(stderr);
@@ -359,7 +360,7 @@ bool init_batch(const struct config *config, char *batch) {
     // TODO use Authorization header
     if(!BUILD_MATRIX_URL(&config->c, url, SYNC_URL "?" ROOM_FILTER "&"))
         return false;
-    mtrix_buffer buffer = {NULL, 0};
+    struct mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
@@ -399,7 +400,7 @@ bool get_next_batch(cJSON *j, char *batch) {
 
 bool filter(const struct config *config, char *batch) {
     const size_t user_len = strlen(config->c.short_user);
-    mtrix_buffer buffer = {0};
+    struct mtrix_buffer buffer = {0};
     cJSON *req = NULL;
     bool ret = false;
     for(;;) {
@@ -430,7 +431,7 @@ bool loop(const struct config *config, char *batch) {
     if(!build_url(url, url_parts))
         return false;
     const size_t user_len = strlen(config->c.short_user);
-    mtrix_buffer buffer = {0};
+    struct mtrix_buffer buffer = {0};
     cJSON *req = NULL;
     for(;;) {
         const time_t start = time(NULL);
@@ -484,7 +485,7 @@ bool handle_request(
                 config_verbose(config, "skipping message: not mentioned\n");
                 continue;
             }
-            mtrix_buffer output = {0};
+            struct mtrix_buffer output = {0};
             if(!process_input(config, text + user_len + 1, &output)) {
                 ret = false;
                 continue;
@@ -533,11 +534,11 @@ bool check_mention(const char *text, const char *user) {
 }
 
 bool process_input(
-    const struct config *config, const char *input, mtrix_buffer *output
+    const struct config *config, const char *input, struct mtrix_buffer *output
 ) {
     int in[2] = {-1, -1}, out[2] = {-1, -1}, err[2] = {-1, -1};
     FILE *child_in = NULL, *child_out = NULL, *child_err = NULL;
-    mtrix_buffer msg = {0};
+    struct mtrix_buffer msg = {0};
     bool ret = false;
     if(pipe(in) == -1) { log_errno("pipe"); goto cleanup; }
     if(pipe(out) == -1) { log_errno("pipe"); goto cleanup; }
@@ -582,7 +583,7 @@ bool process_input(
         goto cleanup;
     if(!wait_n(1, &pid)) {
         free(msg.p);
-        msg = (mtrix_buffer){0};
+        msg = (struct mtrix_buffer){0};
         const char err[] = "error: ";
         mtrix_buffer_append(err, 1, sizeof(err) - 1, &msg);
         if(!read_output(child_err, &msg))
@@ -636,7 +637,7 @@ bool send_msg(const struct config *config, const char *room, const char *msg) {
     cJSON_AddItemToObject(msg_json, "body", cJSON_CreateString(msg));
     char *data = cJSON_PrintUnformatted(msg_json);
     free(msg_json);
-    mtrix_buffer resp = {NULL, 0};
+    struct mtrix_buffer resp = {0};
     const post_request r = {.url = url, .data_len = strlen(data), .data = data};
     const bool ret = post(r, mtrix_config_verbose(&config->c), &resp);
     free(data);
@@ -644,7 +645,7 @@ bool send_msg(const struct config *config, const char *room, const char *msg) {
     return ret;
 }
 
-bool read_output(FILE *f, mtrix_buffer *buf) {
+bool read_output(FILE *f, struct mtrix_buffer *buf) {
     char buffer[1024];
     while(!feof(f)) {
         const size_t n = fread(buffer, 1, sizeof(buffer), f);

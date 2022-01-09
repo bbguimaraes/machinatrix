@@ -799,7 +799,7 @@ bool cmd_dlpo(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    mtrix_buffer buffer = {NULL, 0};
+    struct mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
@@ -836,7 +836,7 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    mtrix_buffer buffer = {NULL, 0};
+    struct mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
@@ -885,7 +885,7 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    mtrix_buffer buffer = {NULL, 0};
+    struct mtrix_buffer buffer = {NULL, 0};
     if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
         free(buffer.p);
         return false;
