@@ -127,15 +127,21 @@ static bool test_trim_tag() {
 static bool test_print_unescaped() {
     FILE *out = tmpfile();
     char buf[] =
-        "<p>A paragraph of <b>text</b> with <i>several</i> HTML tags.</p>"
+        "<p>"
+            "A paragraph of <b>text</b> with <i>several</i> HTML tags.</p>"
+            "&nbsp;&nbsp; &nbsp;<hr />&lt;&gt;&amp;&xxx;text"
+        "</p>"
+        "text>"
         "<hr />"
-        "<img src=\"test.png\" />";
+        "<img src=\"test.png\" />&<";
     print_unescaped(out, (const unsigned char *)buf);
     const long n = ftell(out);
     assert(n >= 0);
     assert((size_t)n < sizeof(buf));
     assert(fseek(out, 0, SEEK_SET) >= 0);
-    const char expected[] = "A paragraph of text with several HTML tags.";
+    const char expected[] =
+        "A paragraph of text with several HTML tags."
+        "    lt;gt;amp;xxx;texttext>";
     bool ret = ASSERT_EQ((size_t)n, sizeof(expected) - 1);
     ret = ASSERT_EQ(fread(buf, 1, (size_t)n, out), (size_t)n) && ret;
     buf[n] = 0;
