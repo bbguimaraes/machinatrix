@@ -71,21 +71,38 @@ void trim_tag(const unsigned char **pb, const unsigned char **pe) {
     *pe = e;
 }
 
+static const unsigned char *unescape(FILE *f, const unsigned char *s);
+static const unsigned char *skip_tags(const unsigned char *s);
+static const unsigned char *copy_text(FILE *f, const unsigned char *s);
+
 void print_unescaped(FILE *f, const unsigned char *s) {
-    for(;;) {
-        if(strncmp((const char *)s, "&nbsp;", 6) == 0) {
-            fprintf(f, " ");
-            s += 5;
-        } else if(*s == '<')
-            while(*s && *s != '>')
-                ++s;
-        if(!*s)
-            break;
-        ++s;
-        const unsigned char *e = s;
-        while(*e && *e != '&' && *e != '<')
-            ++e;
-        fprintf(f, "%.*s", (int)(e - s), s);
-        s = e;
+    while(*s)
+        s = (*s == '&') ? unescape(f, s)
+            : (*s == '<') ? skip_tags(s)
+            : copy_text(f, s);
+}
+
+const unsigned char *unescape(FILE *f, const unsigned char *s) {
+    ++s;
+#define X(t, r) \
+    if(strncmp((const char*)s, #t ";", sizeof(#t)) == 0) { \
+        fputc(r, f); \
+        return s + sizeof(#t); \
     }
+    X(nbsp, ' ')
+#undef X
+    return s;
+}
+
+const unsigned char *skip_tags(const unsigned char *s) {
+    while(*++s && *s != '>');
+    return s + (*s == '>');
+}
+
+const unsigned char *copy_text(FILE *f, const unsigned char *s) {
+    const unsigned char *const p = s;
+    while(*s && *s != '&' && *s != '<')
+        ++s;
+    fprintf(f, "%.*s", (int)(s - p), p);
+    return s;
 }
