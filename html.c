@@ -90,6 +90,9 @@ const unsigned char *unescape(FILE *f, const unsigned char *s) {
         return s + sizeof(#t); \
     }
     X(nbsp, ' ')
+    X(lt, '<')
+    X(gt, '>')
+    X(amp, '&')
 #undef X
     return s;
 }

@@ -141,7 +141,7 @@ static bool test_print_unescaped() {
     assert(fseek(out, 0, SEEK_SET) >= 0);
     const char expected[] =
         "A paragraph of text with several HTML tags."
-        "    lt;gt;amp;xxx;texttext>";
+        "    <>&xxx;texttext>";
     bool ret = ASSERT_EQ((size_t)n, sizeof(expected) - 1);
     ret = ASSERT_EQ(fread(buf, 1, (size_t)n, out), (size_t)n) && ret;
     buf[n] = 0;
