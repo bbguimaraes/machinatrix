@@ -94,6 +94,7 @@ const unsigned char *unescape(FILE *f, const unsigned char *s) {
     X(gt, '>')
     X(amp, '&')
 #undef X
+    fputc('&', f);
     return s;
 }
 
