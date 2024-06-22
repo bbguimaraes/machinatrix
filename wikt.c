@@ -34,24 +34,31 @@ TidyNode wikt_translation_body(TidyNode n) {
         : NULL;
 }
 
-static bool
-next(const char *header, const char *prefix, TidyNode *n, bool sub) {
+static bool node_has_id_prefix(TidyNode node, const char *p) {
+    TidyAttr a = find_attr(node, "id");
+    if(!a)
+        return false;
+    const char *const id = tidyAttrValue(a);
+    return id && is_prefix(p, id);
+}
+
+static bool next_section(
+    const char *cls, const char *prefix, TidyNode *n, bool sub)
+{
     bool ret = false;
     TidyNode node = *n;
     while((node = tidyGetNext(node))) {
-        const char *name = tidyNodeGetName(node);
-        if(!name)
+        TidyAttr const a = find_attr(node, "class");
+        if(!a)
             continue;
-        if(strcmp(name, "h2") == 0)
+        ctmbstr const v = tidyAttrValue(a);
+        if(!sub && !list_has_class(v, "mw-heading"))
+            continue;
+        if(list_has_class(v, "mw-heading2"))
             break;
-        if(strcmp(name, header) != 0)
+        if(cls && !list_has_class(v, cls))
             continue;
-        TidyNode cmp = sub ? node : tidyGetChild(node);
-        TidyAttr attr = find_attr(cmp, "id");
-        if(!attr)
-            continue;
-        const char *id = tidyAttrValue(attr);
-        if(!id || !is_prefix(prefix, id))
+        if(!node_has_id_prefix(sub ? node : tidyGetChild(node), prefix))
             continue;
         ret = true;
         break;
@@ -60,10 +67,10 @@ next(const char *header, const char *prefix, TidyNode *n, bool sub) {
     return ret;
 }
 
-bool wikt_next_section(const char *header, const char *prefix, TidyNode *node) {
-    return next(header, prefix, node, false);
+bool wikt_next_section(const char *cls, const char *prefix, TidyNode *node) {
+    return next_section(cls, prefix, node, false);
 }
 
-bool wikt_next_subsection(const char *tag, const char *prefix, TidyNode *node) {
-    return next(tag, prefix, node, true);
+bool wikt_next_subsection(const char *cls, const char *prefix, TidyNode *node) {
+    return next_section(cls, prefix, node, true);
 }
