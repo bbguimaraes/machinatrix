@@ -33,7 +33,7 @@ static bool test_log(void) {
         "prog_name: cmd_name: with errno 2: No such file or directory\n");
 }
 
-static bool test_is_prefix() {
+static bool test_is_prefix(void) {
     const struct {
         const char *prefix, *s;
         bool is_prefix;
@@ -58,14 +58,14 @@ static bool test_is_prefix() {
     return ret;
 }
 
-static bool test_copy_arg_empty() {
+static bool test_copy_arg_empty(void) {
     log_set(tmpfile());
     const char *arg = "";
     return ASSERT(!copy_arg("arg_name", (struct mtrix_buffer){0}, arg))
         && CHECK_LOG("empty arg_name specified\n");
 }
 
-static bool test_copy_arg_too_long() {
+static bool test_copy_arg_too_long(void) {
     log_set(tmpfile());
     const char *arg = "01234567";
     char out[8] = {0};
@@ -75,7 +75,7 @@ static bool test_copy_arg_too_long() {
         && CHECK_LOG("arg_name too long (>= 8)\n");
 }
 
-static bool test_copy_arg() {
+static bool test_copy_arg(void) {
     log_set(tmpfile());
     const char *arg = "arg";
     char out[4];
@@ -110,7 +110,7 @@ static bool test_read_write_all(void) {
     return ret;
 }
 
-static bool test_exec_err() {
+static bool test_exec_err(void) {
     log_set(tmpfile());
     const char *argv[] = {"", NULL};
     bool ret = ASSERT(!exec(argv, -1, -1, -1));
@@ -119,7 +119,7 @@ static bool test_exec_err() {
     return CHECK_LOG(buf) && ret;
 }
 
-static bool test_exec() {
+static bool test_exec(void) {
     const char *argv[] = {"true", NULL};
     pid_t pid = fork();
     assert(pid != -1);
@@ -128,7 +128,7 @@ static bool test_exec() {
     return ASSERT(waitpid(-1, NULL, 0));
 }
 
-static bool test_exec_output() {
+static bool test_exec_output(void) {
     log_set(stderr);
     const char *argv[] = {
         "sh", "-c",
@@ -186,7 +186,7 @@ static bool test_exec_output() {
     return ret;
 }
 
-static bool test_wait_n_signal() {
+static bool test_wait_n_signal(void) {
     log_set(tmpfile());
     pid_t pids[2] = {0};
     pids[0] = fork();
@@ -202,7 +202,7 @@ static bool test_wait_n_signal() {
     return CHECK_LOG(msg) && ret;
 }
 
-static bool test_wait_n_failure() {
+static bool test_wait_n_failure(void) {
     log_set(tmpfile());
     pid_t pids[2] = {0};
     pids[0] = fork();
@@ -214,7 +214,7 @@ static bool test_wait_n_failure() {
     return ASSERT(!wait_n(2, pids)) && CHECK_LOG("child exited: 1\n");
 }
 
-static bool test_wait_n() {
+static bool test_wait_n(void) {
     log_set(tmpfile());
     pid_t pids[2] = {0};
     pids[0] = fork();
@@ -226,7 +226,7 @@ static bool test_wait_n() {
     return ASSERT(wait_n(2, pids));
 }
 
-static bool test_join_lines() {
+static bool test_join_lines(void) {
     unsigned char input[] = "test\njoin lines\ntest";
     join_lines(input, input + sizeof(input));
     const unsigned char expected[] = "test join lines test";
@@ -237,7 +237,7 @@ static bool test_join_lines() {
     return true;
 }
 
-static bool test_mtrix_buffer_append() {
+static bool test_mtrix_buffer_append(void) {
     struct mtrix_buffer b = {0};
     mtrix_buffer_append(NULL, 0, 0, &b);
     bool ret = ASSERT_EQ(b.n, 0);
@@ -261,7 +261,7 @@ static bool test_mtrix_buffer_append() {
     return ret;
 }
 
-static bool test_build_url_too_long() {
+static bool test_build_url_too_long(void) {
     log_set(tmpfile());
     char buf[MTRIX_MAX_URL_LEN * 2], input[MTRIX_MAX_URL_LEN + 1];
     memset(input, '_', sizeof(input) - 1);
@@ -272,7 +272,7 @@ static bool test_build_url_too_long() {
         && CHECK_LOG_N(expected, sizeof(expected) - 1);
 }
 
-static bool test_build_url() {
+static bool test_build_url(void) {
     log_set(tmpfile());
     char input0[] = "input0", input1[] = "input1";
     char buf[sizeof(input0) + sizeof(input1) - 1];
@@ -314,7 +314,7 @@ static bool test_open_or_create_create(void) {
     return ret;
 }
 
-int main() {
+int main(void) {
     bool ret = true;
     ret = RUN(test_log) && ret;
     ret = RUN(test_is_prefix) && ret;

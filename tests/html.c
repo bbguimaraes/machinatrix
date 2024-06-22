@@ -10,7 +10,7 @@
 const char *PROG_NAME = NULL;
 const char *CMD_NAME = NULL;
 
-static bool test_find_node_by_name() {
+static bool test_find_node_by_name(void) {
     const char html[] = HTML(
         "<h1>h1</h1>"
         "<span name=\"span\"/>"
@@ -26,7 +26,7 @@ static bool test_find_node_by_name() {
     return ret;
 }
 
-static bool test_find_node_by_name_prefix() {
+static bool test_find_node_by_name_prefix(void) {
     const char html[] = HTML(
         "<span name=\"span\"/>"
         "<div name=\"div\"/>"
@@ -42,7 +42,7 @@ static bool test_find_node_by_name_prefix() {
     return ret;
 }
 
-static bool test_find_node_by_id() {
+static bool test_find_node_by_id(void) {
     const char html[] = HTML(
         "<h1 id=\"h1\">h1</h1>"
         "<span id=\"span\"/>"
@@ -60,7 +60,7 @@ static bool test_find_node_by_id() {
     return ret;
 }
 
-static bool test_find_node_by_id_rec() {
+static bool test_find_node_by_id_rec(void) {
     const char html[] = HTML(
         "<div>"
         "<h1 id=\"h1\">h1</h1>"
@@ -82,7 +82,7 @@ static bool test_find_node_by_id_rec() {
     return ret;
 }
 
-static bool test_find_attr() {
+static bool test_find_attr(void) {
     const char html[] = HTML("<div name=\"name\" id=\"id\" style=\"test\" />");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
@@ -94,7 +94,7 @@ static bool test_find_attr() {
     return ret;
 }
 
-static bool test_trim_tag() {
+static bool test_trim_tag(void) {
 #define CASE(x, y) {sizeof(x) - 1, sizeof(y) - 1, x, y}
     const struct {
         size_t in_len, out_len;
@@ -124,7 +124,7 @@ static bool test_trim_tag() {
     return ret;
 }
 
-static bool test_print_unescaped() {
+static bool test_print_unescaped(void) {
     FILE *out = tmpfile();
     char buf[] =
         "<p>"
@@ -149,7 +149,7 @@ static bool test_print_unescaped() {
     return ret;
 }
 
-int main() {
+int main(void) {
     bool ret = true;
     ret = RUN(test_find_node_by_name) && ret;
     ret = RUN(test_find_node_by_name_prefix) && ret;
