@@ -1,5 +1,7 @@
 #include "html.h"
 
+#include <tidybuffio.h>
+
 #include "tests/common.h"
 
 #define HTML_START \
@@ -42,6 +44,25 @@ static bool test_find_node_by_name_prefix(void) {
     return ret;
 }
 
+static bool test_find_node_by_class(void) {
+    const char html[] = HTML(
+        "<h1 class=\"h1\">h1</h1>"
+        "<span class=\"span\">span</span>"
+        "<div class=\"test\"/>");
+    const TidyDoc doc = tidyCreate();
+    tidyParseString(doc, html);
+    const TidyNode node =
+        find_node_by_class(tidyGetChild(tidyGetBody(doc)), "test", true);
+    bool ret = ASSERT(node);
+    const ctmbstr name = node ? tidyNodeGetName(node) : "";
+    ret = ASSERT_STR_EQ(name, "div") && ret;
+    const TidyAttr attr = find_attr(node, "class");
+    const ctmbstr id = attr ? tidyAttrValue(attr) : "";
+    ret = ASSERT_STR_EQ(id, "test") && ret;
+    tidyRelease(doc);
+    return ret;
+}
+
 static bool test_find_node_by_id(void) {
     const char html[] = HTML(
         "<h1 id=\"h1\">h1</h1>"
@@ -78,6 +99,32 @@ static bool test_find_node_by_id_rec(void) {
     const TidyAttr attr = tidyAttrFirst(node);
     const ctmbstr id = attr ? tidyAttrValue(attr) : "";
     ret = ASSERT_STR_EQ(id, "test") && ret;
+    tidyRelease(doc);
+    return ret;
+}
+
+static bool test_find_node_by_content(void) {
+    const char html[] = HTML(
+        "<div>"
+            "<h1 id=\"h1\">h1</h1>"
+            "<span id=\"span\">content</span>"
+            "<div id=\"test\"/>"
+        "</div>");
+    const TidyDoc doc = tidyCreate();
+    tidyParseString(doc, html);
+    const TidyNode first = tidyGetBody(doc);
+    TidyBuffer buf = {0};
+    const TidyNode node = find_node_by_content(
+        doc, first, "content\n", &buf, true);
+    bool ret = ASSERT(node);
+    const ctmbstr name = tidyNodeGetName(tidyGetParent(node));
+    ret = ASSERT(name) && ret;
+    if(name)
+        ret = ASSERT_STR_EQ(name, "span") && ret;
+    tidyBufClear(&buf);
+    ret = tidyNodeGetText(doc, node, &buf) && ret;
+    ret = ASSERT_STR_EQ_N((const char*)buf.bp, "content\n", buf.size) && ret;
+    tidyBufFree(&buf);
     tidyRelease(doc);
     return ret;
 }
@@ -153,8 +200,10 @@ int main(void) {
     bool ret = true;
     ret = RUN(test_find_node_by_name) && ret;
     ret = RUN(test_find_node_by_name_prefix) && ret;
+    ret = RUN(test_find_node_by_class) && ret;
     ret = RUN(test_find_node_by_id) && ret;
     ret = RUN(test_find_node_by_id_rec) && ret;
+    ret = RUN(test_find_node_by_content) && ret;
     ret = RUN(test_find_attr) && ret;
     ret = RUN(test_trim_tag) && ret;
     ret = RUN(test_print_unescaped) && ret;
