@@ -24,4 +24,4 @@ TidyNode dlpo_find_definitions(TidyNode node);
  * \param doc The root document.
  * \param node The element returned by \ref dlpo_find_definitions.
  */
-bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode node);
+bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode def);
