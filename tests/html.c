@@ -13,7 +13,7 @@ const char *CMD_NAME = NULL;
 static bool test_find_node_by_name(void) {
     const char html[] = HTML(
         "<h1>h1</h1>"
-        "<span name=\"span\"/>"
+        "<span name=\"span\">span</span>"
         "<div name=\"div\"/>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
@@ -28,7 +28,7 @@ static bool test_find_node_by_name(void) {
 
 static bool test_find_node_by_name_prefix(void) {
     const char html[] = HTML(
-        "<span name=\"span\"/>"
+        "<span name=\"span\">span</span>"
         "<div name=\"div\"/>"
         "<h1>h1</h1>");
     const TidyDoc doc = tidyCreate();
@@ -45,7 +45,7 @@ static bool test_find_node_by_name_prefix(void) {
 static bool test_find_node_by_id(void) {
     const char html[] = HTML(
         "<h1 id=\"h1\">h1</h1>"
-        "<span id=\"span\"/>"
+        "<span id=\"span\">span</span>"
         "<div id=\"test\"/>");
     const TidyDoc doc = tidyCreate();
     tidyParseString(doc, html);
@@ -64,7 +64,7 @@ static bool test_find_node_by_id_rec(void) {
     const char html[] = HTML(
         "<div>"
         "<h1 id=\"h1\">h1</h1>"
-        "<span id=\"span\"/>"
+        "<span id=\"span\">span</span>"
         "<div id=\"test\"/>"
         "</div>");
     const TidyDoc doc = tidyCreate();
