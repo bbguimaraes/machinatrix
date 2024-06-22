@@ -1,5 +1,26 @@
 #include "html.h"
 
+#include <tidybuffio.h>
+
+#include "utils.h"
+
+bool list_has_class(const char *s, const char *cls) {
+    const size_t n = strlen(cls);
+    while(*(s += strspn(s, " "))) {
+        const char *const e = strchrnul(s + 1, ' ');
+        if(n == (size_t)(e - s) && strncmp(s, cls, n) == 0)
+            return true;
+        s = e + !!*e;
+    }
+    return false;
+}
+
+bool node_has_class(TidyNode node, const char *cls) {
+    TidyAttr const a = find_attr(node, "class");
+    ctmbstr const v = tidyAttrValue(a);
+    return a && v && list_has_class(v, cls);
+}
+
 TidyNode find_node_by_name(TidyNode node, const char *name) {
     for(; node; node = tidyGetNext(node)) {
         ctmbstr n = tidyNodeGetName(node);
@@ -15,6 +36,19 @@ TidyNode find_node_by_name_prefix(TidyNode node, const char *name) {
         ctmbstr n = tidyNodeGetName(node);
         if(n && strncmp(n, name, len) == 0)
             break;
+    }
+    return node;
+}
+
+TidyNode find_node_by_class(TidyNode node, const char *cls, bool rec) {
+    for(; node; node = tidyGetNext(node)) {
+        if(node_has_class(node, cls))
+            break;
+        if(!rec)
+            continue;
+        TidyNode const ret = find_node_by_class(tidyGetChild(node), cls, rec);
+        if(ret)
+            return ret;
     }
     return node;
 }
@@ -37,6 +71,27 @@ TidyNode find_node_by_id(TidyNode node, const char *id, bool rec) {
             return ret;
     }
     return NULL;
+}
+
+TidyNode find_node_by_content(
+    TidyDoc doc, TidyNode node, const char *s, TidyBuffer *b, bool rec)
+{
+    for(; node; node = tidyGetNext(node)) {
+        TidyNode const child = tidyGetChild(node);
+        if(!child) {
+            tidyNodeGetText(doc, node, b);
+            const bool ret = strncmp((const char*)b->bp, s, b->size) == 0;
+            tidyBufClear(b);
+            if(ret)
+                break;
+        }
+        if(!rec)
+            continue;
+        TidyNode const ret = find_node_by_content(doc, child, s, b, rec);
+        if(ret)
+            return ret;
+    }
+    return node;
 }
 
 TidyAttr find_attr(TidyNode node, const char *name) {

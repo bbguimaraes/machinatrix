@@ -55,6 +55,9 @@ void log_errv(const char *fmt, va_list argp);
  */
 void log_errno(const char *fmt, ...);
 
+/** See glibc's function. */
+static const char *strchrnul(const char *s, int c);
+
 /**
  * Checks if a string has a certain prefix.
  * \return The first character after the prefix or `NULL` if not a prefix.
@@ -131,3 +134,9 @@ typedef struct {
  * \param verbose Emit debug output.
  */
 bool post(post_request r, bool verbose, struct mtrix_buffer *b);
+
+static inline const char *strchrnul(const char *s, int c) {
+    while(*s && *s != c)
+        ++s;
+    return s;
+}
