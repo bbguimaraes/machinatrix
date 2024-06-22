@@ -858,7 +858,7 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
         TidyNode sect = lang;
         TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
-        while(wikt_next_section("h3", "Etymology", &sect)) {
+        while(wikt_next_section("mw-heading3", "Etymology", &sect)) {
             if(lang_text) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;
@@ -908,7 +908,7 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
         TidyNode sect = lang;
         TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
-        while(wikt_next_subsection("div", "Translations-", &sect)) {
+        while(wikt_next_subsection(NULL, "Translations-", &sect)) {
             if(lang_text) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;

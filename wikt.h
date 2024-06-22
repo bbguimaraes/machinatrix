@@ -37,10 +37,10 @@ TidyNode wikt_translation_body(TidyNode node);
  * Advances `node` until the next section.
  * \return Whether a section was found.
  */
-bool wikt_next_section(const char *header, const char *prefix, TidyNode *node);
+bool wikt_next_section(const char *cls, const char *prefix, TidyNode *node);
 
 /**
  * Advances `node` until the next subsection.
  * \return Whether a subsection was found.
  */
-bool wikt_next_subsection(const char *tag, const char *prefix, TidyNode *node);
+bool wikt_next_subsection(const char *cls, const char *prefix, TidyNode *node);
