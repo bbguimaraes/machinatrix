@@ -226,7 +226,7 @@ void usage(FILE *f) {
         "    -v, --verbose          verbose output\n"
         "    --db-path              path to the database file (`:memory:` is\n"
         "                           used if not set)\n"
-        "    --bind-socket addr     bind socket to `addr`, prefix path with\n"
+        "    --bind addr            bind socket to `addr`, prefix path with\n"
         "                           `unix:` to use a Unix domain socket\n"
         "\n"
         "If no --bind* argument is given, commands are read from stdin.\n",
