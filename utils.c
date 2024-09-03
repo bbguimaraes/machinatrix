@@ -71,6 +71,26 @@ bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src) {
     return true;
 }
 
+char *join_path(char v[static MTRIX_MAX_PATH], int n, ...) {
+    va_list args;
+    va_start(args, n);
+    char *p = v, *const e = v + MTRIX_MAX_PATH;
+    for(int i = 0; i != n; ++i) {
+        size_t ni = strlcpy(p, va_arg(args, const char*), (size_t)(e - p));
+        if(e[-1])
+            goto err;
+        p += ni - 1;
+    }
+    assert(p <= e);
+    assert(!e[-1]);
+    va_end(args);
+    return v;
+err:
+    va_end(args);
+    log_err("%s: path too long: %s\n", __func__, v);
+    return NULL;
+}
+
 FILE *open_or_create(const char *path, const char *flags) {
     FILE *ret;
     if(!(ret = fopen(path, "a")))

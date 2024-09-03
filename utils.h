@@ -58,6 +58,9 @@ void log_errno(const char *fmt, ...);
 /** See glibc's function. */
 static const char *strchrnul(const char *s, int c);
 
+/** See libbsd's function. */
+static size_t strlcpy(char *restrict dst, const char *restrict src, size_t n);
+
 /**
  * Checks if a string has a certain prefix.
  * \return The first character after the prefix or `NULL` if not a prefix.
@@ -69,6 +72,9 @@ char *is_prefix(const char *prefix, const char *s);
  * Checks for non-emptiness and length are performed and errors are logged.
  */
 bool copy_arg(const char *name, struct mtrix_buffer dst, const char *src);
+
+/** Concatenate \c n segments, with length checking. */
+char *join_path(char v[static MTRIX_MAX_PATH], int n, ...);
 
 /** Performs an \c open(2)s with \c O_CREAT followed by \c fopen. */
 FILE *open_or_create(const char *path, const char *flags);
@@ -139,4 +145,13 @@ static inline const char *strchrnul(const char *s, int c) {
     while(*s && *s != c)
         ++s;
     return s;
+}
+
+static inline size_t strlcpy(
+    char *restrict dst, const char *restrict src, size_t n)
+{
+    const char *const p = dst;
+    while(n && (*dst++ = *src++))
+        --n;
+    return (size_t)(dst - p);
 }
