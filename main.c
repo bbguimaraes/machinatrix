@@ -460,10 +460,9 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
         }
         if(!pids[0]) {
             close(fds[0][0]);
-            const char *cargv[] = {"look", 0, 0};
-            char arg[] = {*c, '\0'};
-            cargv[1] = arg;
-            return exec(cargv, -1, fds[0][1], -1);
+            return exec(
+                (const char*[]){"look", (char[]){*c, '\0'}, 0},
+                -1, fds[0][1], -1);
         }
         close(fds[0][1]);
         if(pipe(fds[1]) == -1) {
@@ -473,8 +472,9 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
         pids[1] = fork();
         if(!pids[1]) {
             close(fds[1][0]);
-            const char *cargv[] = {"shuf", "-n", "1", 0};
-            return exec(cargv, fds[0][0], fds[1][1], -1);
+            return exec(
+                (const char*[]){"shuf", "-n", "1", 0},
+                fds[0][0], fds[1][1], -1);
         }
         close(fds[0][0]);
         close(fds[1][1]);
