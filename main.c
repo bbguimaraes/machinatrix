@@ -442,11 +442,20 @@ bool cmd_word(const struct config *config, const char *const *argv) {
 
 bool cmd_abbr(const struct config *config, const char *const *argv) {
     (void)config;
-    if(!argv[0] || argv[1])
-        return log_err("command takes one argument\n"), false;
+    const char *const abbr = *argv++;
+    if(!abbr)
+        return log_err("command takes at least one argument\n"), false;
+    char dict_buf[MAX_PATH];
+    const char *dict = *argv++;
+    if(dict) {
+        if(!(dict = join_path(dict_buf, 2, "/usr/share/dict/", dict)))
+            return false;
+        if(*argv)
+            return log_err("command takes at most two arguments\n"), false;
+    }
     char *buffer = NULL;
     size_t buffer_len = 0;
-    for(const char *c = argv[0]; *c; ++c) {
+    for(const char *c = abbr; *c; ++c) {
         int fds[2][2];
         if(pipe(fds[0]) == -1) {
             log_errno("pipe");
@@ -461,7 +470,9 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
         if(!pids[0]) {
             close(fds[0][0]);
             return exec(
-                (const char*[]){"look", (char[]){*c, '\0'}, 0},
+                (const char*[]){
+                    "look", "--ignore-case", (char[]){*c, '\0'}, dict, 0,
+                },
                 -1, fds[0][1], -1);
         }
         close(fds[0][1]);
@@ -488,7 +499,7 @@ bool cmd_abbr(const struct config *config, const char *const *argv) {
             break;
         if(buffer[len - 1] == '\n')
             buffer[len - 1] = '\0';
-        printf("%s%s", c != argv[0] ? " " : "", buffer);
+        printf("%s%s", c != abbr ? " " : "", buffer);
         if(!wait_n(2, pids))
             return false;
     }
