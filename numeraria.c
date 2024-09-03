@@ -312,6 +312,7 @@ bool config_setup(struct config *config) {
     if(!config_setup_self_pipe(config))
         return false;
     signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
     signal(SIGPIPE, SIG_IGN);
     return true;
 }
