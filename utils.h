@@ -17,7 +17,7 @@
 #define MTRIX_MAX_URL_LEN ((size_t)1024U)
 
 /** Maximum number of command arguments (excluding the command name). */
-#define MTRIX_MAX_ARGS ((size_t)1U)
+#define MTRIX_MAX_ARGS ((size_t)2U)
 
 /** Helper macro for \ref build_url that creates a `const char *` array. */
 #define BUILD_URL(url, ...) build_url(url, (const char *[]){__VA_ARGS__, NULL})

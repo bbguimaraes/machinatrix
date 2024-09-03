@@ -516,8 +516,9 @@ bool config_record_command(
     const mtrix_hash h = mtrix_hasher_add_bytes(MTRIX_HASHER_INIT, cmd, len).h;
     const char sql[] =
         "insert into machinatrix_stats_cmd"
-        " (hash, cmd, arg0, count) values (?, ?, ?, 1)"
+        " (hash, cmd, arg0, arg1, count) values (?, ?, ?, ?, 1)"
         " on conflict(hash) do update set count = count + 1;";
+    static_assert(MTRIX_MAX_ARGS == 2);
     sqlite3_stmt *stmt = NULL;
     sqlite3_prepare_v3(config->sqlite, sql, sizeof(sql) - 1, 0, &stmt, NULL);
     if(!stmt)
@@ -590,6 +591,7 @@ static bool setup_db(const char *path, sqlite3 **sqlite) {
             "hash int primary key,"
             " cmd text,"
             " arg0 text,"
+            " arg1 text,"
             " count int"
         ");";
     if(sqlite3_exec(p, tables, NULL, NULL, NULL) != SQLITE_OK)
