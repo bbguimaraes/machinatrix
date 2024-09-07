@@ -9,12 +9,12 @@ Current supported commands:
 - `ping`: pong
 - `word`: random word
 - `damn`: random curse
-- `abbr`: random de-abbreviation
+- `abbr <acronym> [<dictionary>]`: random de-abbreviation
 - `bard`: random Shakespearean insult
 - `dlpo <term>`: lookup etymology (DLPO)
 - `wikt <term>`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
-- `tr`: translate word (Wiktionary)
+- `tr <word>`: translate word (Wiktionary)
 - `stats`: print statistics
 
 ## building
