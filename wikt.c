@@ -23,15 +23,18 @@ bool wikt_parse_page(TidyDoc doc, wikt_page *p) {
 }
 
 TidyNode wikt_translation_head(TidyNode n) {
-    return (n = tidyGetChild(n)) && (n = tidyGetChild(n)) ? n : NULL;
+    return ((n = find_node_by_class(n, "NavHead", true))
+        && (n = tidyGetChild(n))
+    ) ? n : NULL;
 }
 
 TidyNode wikt_translation_body(TidyNode n) {
-    return (n = tidyGetChild(n)) && (n = tidyGetNext(n))
-            && (n = tidyGetChild(n)) && (n = find_node_by_name(n, "table"))
-            && (n = tidyGetChild(n)) && (n = tidyGetChild(n))
-        ? n
-        : NULL;
+    return ((n = find_node_by_class(n, "translations", true))
+        && (n = find_node_by_name(n, "table"))
+        && (n = tidyGetChild(n))
+        && (n = find_node_by_name(n, "tbody"))
+        && (n = tidyGetChild(n))
+    ) ? n : NULL;
 }
 
 static bool node_has_id_prefix(TidyNode node, const char *p) {
