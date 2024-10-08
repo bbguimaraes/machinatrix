@@ -12,7 +12,7 @@ Current supported commands:
 - `abbr <acronym> [<dictionary>]`: random de-abbreviation
 - `bard`: random Shakespearean insult
 - `dlpo <term>`: lookup etymology (DLPO)
-- `wikt <term>`: lookup etymology (Wiktionary)
+- `wikt <term> [<lang>]`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
 - `tr <word>`: translate word (Wiktionary)
 - `stats`: print statistics
