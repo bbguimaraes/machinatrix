@@ -33,6 +33,9 @@ TidyNode wikt_translation_head(TidyNode node);
 /** Finds the body of a translation element. */
 TidyNode wikt_translation_body(TidyNode node);
 
+/** Moves forward to the next translation item. */
+TidyNode wikt_next_translation_block(TidyNode node, TidyNode *list);
+
 /**
  * Advances `node` until the next section.
  * \return Whether a section was found.

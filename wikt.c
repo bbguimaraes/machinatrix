@@ -33,8 +33,19 @@ TidyNode wikt_translation_body(TidyNode n) {
         && (n = find_node_by_name(n, "table"))
         && (n = tidyGetChild(n))
         && (n = find_node_by_name(n, "tbody"))
-        && (n = tidyGetChild(n))
     ) ? n : NULL;
+}
+
+TidyNode wikt_next_translation_block(TidyNode node, TidyNode *list) {
+    for(;
+        (node = find_node_by_class(node, "translations-cell", true));
+        node = tidyGetNext(node)
+    ) {
+        TidyNode li = node;
+        if((li = tidyGetChild(li)) && (li = tidyGetChild(li)))
+            return *list = li, node;
+    }
+    return *list = NULL;
 }
 
 static bool node_has_id_prefix(TidyNode node, const char *p) {

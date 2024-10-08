@@ -928,13 +928,9 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
             const TidyNode body = wikt_translation_body(sect);
             if(!body)
                 continue;
-            for(TidyNode td = tidyGetChild(body); td; td = tidyGetNext(td)) {
-                TidyNode n = td;
-                if(!(n = tidyGetChild(n)))
-                    continue;
-                if(!(n = tidyGetChild(n)))
-                    continue;
-                for(TidyNode li = n; li; li = tidyGetNext(li)) {
+            TidyNode td = body, li;
+            while((td = wikt_next_translation_block(td, &li))) {
+                for(; li; li = tidyGetNext(li)) {
                     tidyNodeGetText(tidy_doc, li, &buf);
                     join_lines(buf.bp, buf.bp + buf.size);
                     printf("    ");
@@ -942,6 +938,7 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
                     printf("\n");
                     tidyBufFree(&buf);
                 }
+                td = tidyGetNext(td);
             }
         }
         lang = sect;
