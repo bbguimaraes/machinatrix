@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 
 #include <fcntl.h>
@@ -266,7 +267,7 @@ void usage(FILE *f) {
         "                           random de-abbreviation\n"
         "    bard:                  random Shakespearean insult\n"
         "    dlpo <term>:           lookup etymology (DLPO)\n"
-        "    wikt <term>:           lookup etymology (Wiktionary)\n"
+        "    wikt <term> [<lang>]:  lookup etymology (Wiktionary)\n"
         "    parl:                  use unparliamentary language\n"
         "    tr <term>:             lookup translation (Wiktionary)\n"
         "    stats:                 print statistics\n",
@@ -840,8 +841,9 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
     const char *const term = *argv++;
     if(!term)
         return log_err("command takes at least one argument\n"), false;
-    if(*argv)
-        return log_err("command takes at most one arguments\n"), false;
+    const char *const lang = *argv++;
+    if(lang && *argv)
+        return log_err("command takes at most two arguments\n"), false;
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", term))
         return false;
@@ -856,10 +858,14 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
     wikt_page page;
     if(!wikt_parse_page(tidy_doc, &page))
         goto cleanup;
-    for(TidyNode lang = page.contents; lang;) {
-        TidyNode sect = lang;
-        TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
+    for(TidyNode lang_sect = page.contents; lang_sect;) {
+        TidyNode sect = lang_sect;
+        TidyAttr lang_id = find_attr(tidyGetChild(lang_sect), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
+        if(lang && strcasecmp(lang, lang_text) != 0) {
+            wikt_next_section("mw-heading2", "", &lang_sect);
+            continue;
+        }
         while(wikt_next_section("mw-heading3", "Etymology", &sect)) {
             if(lang_text) {
                 printf("%s\n", lang_text);
@@ -873,7 +879,7 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
             printf("\n");
             tidyBufFree(&buf);
         }
-        lang = sect;
+        lang_sect = sect;
     }
     ret = true;
     stats_increment(config, STATS_WIKT);
