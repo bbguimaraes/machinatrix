@@ -4,6 +4,18 @@
 
 #include "utils.h"
 
+TidyDoc request_and_parse(const char *url, bool verbose) {
+    struct mtrix_buffer buffer = {0};
+    TidyDoc ret = NULL;
+    if(request(url, &buffer, verbose)) {
+        ret = tidyCreate();
+        tidyOptSetBool(ret, TidyForceOutput, yes);
+        tidyParseString(ret, buffer.p);
+    }
+    free(buffer.p);
+    return ret;
+}
+
 bool list_has_class(const char *s, const char *cls) {
     const size_t n = strlen(cls);
     while(*(s += strspn(s, " "))) {

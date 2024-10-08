@@ -9,6 +9,9 @@
 
 #include <tidy.h>
 
+/** Similar to \ref request, but parses the response as HTML. */
+TidyDoc request_and_parse(const char *url, bool verbose);
+
 /** Checks if space-separated list \p l contains the class \p c. */
 bool list_has_class(const char *s, const char *cls);
 
