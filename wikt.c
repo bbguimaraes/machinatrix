@@ -1,5 +1,7 @@
 #include "wikt.h"
 
+#include <strings.h>
+
 #include <tidybuffio.h>
 
 #include "html.h"
@@ -46,6 +48,13 @@ TidyNode wikt_next_translation_block(TidyNode node, TidyNode *list) {
             return *list = li, node;
     }
     return *list = NULL;
+}
+
+bool wikt_translation_is_language(TidyBuffer buf, const char *lang) {
+    const char *const tag = strchrnul((char*)buf.bp, '>');
+    const char *const base = tag ? tag + 1: (char*)buf.bp;
+    const char *const colon = strchrnul(base, ':');
+    return strncasecmp(lang, base, (size_t)(colon - base)) == 0;
 }
 
 static bool node_has_id_prefix(TidyNode node, const char *p) {

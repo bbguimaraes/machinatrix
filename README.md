@@ -14,7 +14,7 @@ Current supported commands:
 - `dlpo <term>`: lookup etymology (DLPO)
 - `wikt <term> [<lang>]`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
-- `tr <word>`: translate word (Wiktionary)
+- `tr <word> [<lang>]`: translate word (Wiktionary)
 - `stats`: print statistics
 
 ## building
