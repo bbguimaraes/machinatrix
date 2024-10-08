@@ -8,6 +8,7 @@
 #include "common.h"
 
 #include <tidy.h>
+#include <tidybuffio.h>
 
 /** Base URL for the service. */
 #define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
@@ -35,6 +36,9 @@ TidyNode wikt_translation_body(TidyNode node);
 
 /** Moves forward to the next translation item. */
 TidyNode wikt_next_translation_block(TidyNode node, TidyNode *list);
+
+/** Checks whether an item is a translation to a given language. */
+bool wikt_translation_is_language(TidyBuffer buf, const char *lang);
 
 /**
  * Advances `node` until the next section.

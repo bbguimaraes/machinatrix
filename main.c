@@ -266,7 +266,7 @@ void usage(FILE *f) {
         "    bard:                  random Shakespearean insult\n"
         "    dlpo <term>:           lookup etymology (DLPO)\n"
         "    wikt <term> [<lang>]:  lookup etymology (Wiktionary)\n"
-        "    tr <term>:             lookup translation (Wiktionary)\n"
+        "    tr <term> [<lang>]:    lookup translation (Wiktionary)\n"
         "    stats:                 print statistics\n",
         PROG_NAME);
 }
@@ -889,7 +889,8 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
     const char *const term = *argv++;
     if(!term)
         return log_err("command takes at least one argument\n"), false;
-    if(*argv)
+    const char *const lang = *argv++;
+    if(lang && *argv)
         return log_err("command takes at most one argument\n"), false;
     char url[MTRIX_MAX_URL_LEN];
     if(!BUILD_URL(url, WIKTIONARY_BASE "/", term))
@@ -906,9 +907,9 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
     if(!wikt_parse_page(tidy_doc, &page))
         goto cleanup;
     TidyBuffer buf = {0};
-    for(TidyNode lang = page.contents; lang;) {
-        TidyNode sect = lang;
-        TidyAttr lang_id = find_attr(tidyGetChild(lang), "id");
+    for(TidyNode lang_sect = page.contents; lang_sect;) {
+        TidyNode sect = lang_sect;
+        TidyAttr lang_id = find_attr(tidyGetChild(lang_sect), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
         while(wikt_next_subsection(NULL, "Translations-", &sect)) {
             if(lang_text) {
@@ -930,15 +931,17 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
                 for(; li; li = tidyGetNext(li)) {
                     tidyNodeGetText(tidy_doc, li, &buf);
                     join_lines(buf.bp, buf.bp + buf.size);
-                    printf("    ");
-                    print_unescaped(stdout, buf.bp);
-                    printf("\n");
+                    if(!lang || wikt_translation_is_language(buf, lang)) {
+                        printf("    ");
+                        print_unescaped(stdout, buf.bp);
+                        printf("\n");
+                    }
                     tidyBufFree(&buf);
                 }
                 td = tidyGetNext(td);
             }
         }
-        lang = sect;
+        lang_sect = sect;
     }
     ret = true;
 cleanup:
