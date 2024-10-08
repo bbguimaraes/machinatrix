@@ -815,15 +815,9 @@ bool cmd_dlpo(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    struct mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
-        free(buffer.p);
+    TidyDoc tidy_doc = request_and_parse(url, mtrix_config_verbose(&config->c));
+    if(!tidy_doc)
         return false;
-    }
-    TidyDoc tidy_doc = tidyCreate();
-    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
-    tidyParseString(tidy_doc, buffer.p);
-    free(buffer.p);
     const char *id = "resultados";
     TidyNode res = find_node_by_id(tidyGetRoot(tidy_doc), id, true);
     bool ret = false;
@@ -855,15 +849,9 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    struct mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
-        free(buffer.p);
+    TidyDoc tidy_doc = request_and_parse(url, mtrix_config_verbose(&config->c));
+    if(!tidy_doc)
         return false;
-    }
-    TidyDoc tidy_doc = tidyCreate();
-    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
-    tidyParseString(tidy_doc, buffer.p);
-    free(buffer.p);
     bool ret = false;
     wikt_page page;
     if(!wikt_parse_page(tidy_doc, &page))
@@ -907,15 +895,9 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
         printf("Looking up term: %s\n", url);
     if(mtrix_config_dry(&config->c))
         return true;
-    struct mtrix_buffer buffer = {NULL, 0};
-    if(!request(url, &buffer, mtrix_config_verbose(&config->c))) {
-        free(buffer.p);
+    TidyDoc tidy_doc = request_and_parse(url, mtrix_config_verbose(&config->c));
+    if(!tidy_doc)
         return false;
-    }
-    TidyDoc tidy_doc = tidyCreate();
-    tidyOptSetBool(tidy_doc, TidyForceOutput, yes);
-    tidyParseString(tidy_doc, buffer.p);
-    free(buffer.p);
     bool ret = false;
     wikt_page page;
     if(!wikt_parse_page(tidy_doc, &page))
