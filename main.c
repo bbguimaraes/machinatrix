@@ -843,10 +843,13 @@ cleanup:
 }
 
 bool cmd_wikt(const struct config *config, const char *const *argv) {
-    if(!argv[0] || argv[1])
-        return log_err("command takes one argument\n"), false;
+    const char *const term = *argv++;
+    if(!term)
+        return log_err("command takes at least one argument\n"), false;
+    if(*argv)
+        return log_err("command takes at most one arguments\n"), false;
     char url[MTRIX_MAX_URL_LEN];
-    if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
+    if(!BUILD_URL(url, WIKTIONARY_BASE "/", term))
         return false;
     if(mtrix_config_verbose(&config->c))
         printf("Looking up term: %s\n", url);
@@ -892,10 +895,13 @@ cleanup:
 }
 
 bool cmd_tr(const struct config *config, const char *const *argv) {
-    if(!argv[0] || argv[1])
-        return log_err("command takes one argument\n"), false;
+    const char *const term = *argv++;
+    if(!term)
+        return log_err("command takes at least one argument\n"), false;
+    if(*argv)
+        return log_err("command takes at most one argument\n"), false;
     char url[MTRIX_MAX_URL_LEN];
-    if(!BUILD_URL(url, WIKTIONARY_BASE "/", *argv))
+    if(!BUILD_URL(url, WIKTIONARY_BASE "/", term))
         return false;
     if(mtrix_config_verbose(&config->c))
         printf("Looking up term: %s\n", url);
