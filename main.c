@@ -863,10 +863,10 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
         TidyAttr lang_id = find_attr(tidyGetChild(lang_sect), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
         if(lang && strcasecmp(lang, lang_text) != 0) {
-            wikt_next_section("mw-heading2", "", &lang_sect);
+            wikt_next_section(WIKTIONARY_H2, "", &lang_sect);
             continue;
         }
-        while(wikt_next_section("mw-heading3", "Etymology", &sect)) {
+        while(wikt_next_section(WIKTIONARY_H3, "Etymology", &sect)) {
             if(lang_text) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;
