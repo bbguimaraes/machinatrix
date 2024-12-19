@@ -7,16 +7,11 @@
 #include "html.h"
 #include "utils.h"
 
-#define TOC_ID "toc"
+#define CONTENTS_ID "mw-content-text"
 
 bool wikt_parse_page(TidyDoc doc, wikt_page *p) {
-    TidyNode node = find_node_by_id(tidyGetBody(doc), TOC_ID, true);
+    TidyNode node = find_node_by_id(tidyGetBody(doc), CONTENTS_ID, true);
     if(!node) {
-        log_err("table of contents (#%s) not found\n", TOC_ID);
-        return false;
-    }
-    p->toc = node;
-    if(!(node = tidyGetNext(node))) {
         log_err("contents not found\n");
         return false;
     }

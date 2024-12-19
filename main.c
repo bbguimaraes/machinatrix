@@ -858,7 +858,8 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
     wikt_page page;
     if(!wikt_parse_page(tidy_doc, &page))
         goto cleanup;
-    for(TidyNode lang_sect = page.contents; lang_sect;) {
+    TidyNode lang_sect = find_node_by_class(page.contents, WIKTIONARY_H2, true);
+    while(lang_sect) {
         TidyNode sect = lang_sect;
         TidyAttr lang_id = find_attr(tidyGetChild(lang_sect), "id");
         const char *lang_text = lang_id ? tidyAttrValue(lang_id) : "?";
@@ -879,7 +880,8 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
             printf("\n");
             tidyBufFree(&buf);
         }
-        lang_sect = sect;
+        if((lang_sect = sect))
+            wikt_next_section(WIKTIONARY_H2, "", &lang_sect);
     }
     ret = true;
     stats_increment(config, STATS_WIKT);

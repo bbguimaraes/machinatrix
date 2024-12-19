@@ -17,8 +17,6 @@
 
 /** Relevant elements of a page. */
 typedef struct {
-    /** Table-of-contents element. */
-    TidyNode toc;
     /** Main content element of the page. */
     TidyNode contents;
 } wikt_page;
