@@ -829,7 +829,10 @@ bool cmd_dlpo(const struct config *config, const char *const *argv) {
     TidyNode def = dlpo_find_definitions(res);
     if(!def)
         goto cleanup;
-    dlpo_print_definitions(stdout, tidy_doc, def);
+    TidyBuffer buf = {0};
+    dlpo_print_definitions(stdout, tidy_doc, def, &buf);
+    if(buf.bp)
+        tidyBufFree(&buf);
     ret = true;
     stats_increment(config, STATS_DLPO);
 cleanup:
@@ -858,6 +861,7 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
     wikt_page page;
     if(!wikt_parse_page(tidy_doc, &page))
         goto cleanup;
+    TidyBuffer buf = {0};
     TidyNode lang_sect = find_node_by_class(page.contents, WIKTIONARY_H2, true);
     while(lang_sect) {
         TidyNode sect = lang_sect;
@@ -872,18 +876,19 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;
             }
-            TidyBuffer buf = {0};
             tidyNodeGetText(tidy_doc, tidyGetNext(sect), &buf);
             join_lines(buf.bp, buf.bp + buf.size);
             printf("  ");
             print_unescaped(stdout, buf.bp);
             printf("\n");
-            tidyBufFree(&buf);
+            tidyBufClear(&buf);
         }
         if((lang_sect = sect))
             wikt_next_section(WIKTIONARY_H2, "", &lang_sect);
     }
     ret = true;
+    if(buf.bp)
+        tidyBufFree(&buf);
     stats_increment(config, STATS_WIKT);
 cleanup:
     tidyRelease(tidy_doc);
@@ -927,7 +932,7 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
             tidyNodeGetText(tidy_doc, head, &buf);
             join_lines(buf.bp, buf.bp + buf.size);
             printf("  %s\n", buf.bp);
-            tidyBufFree(&buf);
+            tidyBufClear(&buf);
             const TidyNode body = wikt_translation_body(sect);
             if(!body)
                 continue;
@@ -941,7 +946,7 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
                         print_unescaped(stdout, buf.bp);
                         printf("\n");
                     }
-                    tidyBufFree(&buf);
+                    tidyBufClear(&buf);
                 }
                 td = tidyGetNext(td);
             }
@@ -949,6 +954,8 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
         lang_sect = sect;
     }
     ret = true;
+    if(buf.bp)
+        tidyBufFree(&buf);
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
