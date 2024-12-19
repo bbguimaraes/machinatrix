@@ -12,7 +12,7 @@ TidyNode dlpo_find_definitions(TidyNode node) {
     return find_node_by_class(node, DEF, true);
 }
 
-bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode def) {
+void dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode def) {
     TidyBuffer buf = {0};
     for(; def; def = find_node_by_class(tidyGetNext(def), DEF, false)) {
         for(TidyNode sec = tidyGetChild(def); sec; sec = tidyGetNext(sec)) {
@@ -32,5 +32,4 @@ bool dlpo_print_definitions(FILE *f, TidyDoc doc, TidyNode def) {
         }
     }
     tidyBufFree(&buf);
-    return true;
 }
