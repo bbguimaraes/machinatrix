@@ -12,9 +12,10 @@
 
 /** Base URL for the service. */
 #define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
-#define WIKTIONARY_H2 "mw-heading2"
-#define WIKTIONARY_H3 "mw-heading3"
-#define WIKTIONARY_H4 "mw-heading4"
+#define WIKTIONARY_HEADER "mw-heading"
+#define WIKTIONARY_H2 WIKTIONARY_HEADER "2"
+#define WIKTIONARY_H3 WIKTIONARY_HEADER "3"
+#define WIKTIONARY_H4 WIKTIONARY_HEADER "4"
 
 /** Relevant elements of a page. */
 typedef struct {

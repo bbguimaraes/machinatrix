@@ -876,17 +876,16 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;
             }
-            TidyNode const etym = tidyGetNext(sect);
-            if(node_has_class(etym, WIKTIONARY_H4)) {
-                printf("  <missing>\n");
-                continue;
+            for(TidyNode etym = sect; (etym = tidyGetNext(etym));) {
+                if(node_has_class(etym, WIKTIONARY_HEADER))
+                    break;
+                tidyNodeGetText(tidy_doc, etym, &buf);
+                join_lines(buf.bp, buf.bp + buf.size);
+                printf("  ");
+                print_unescaped(stdout, buf.bp);
+                printf("\n");
+                tidyBufClear(&buf);
             }
-            tidyNodeGetText(tidy_doc, etym, &buf);
-            join_lines(buf.bp, buf.bp + buf.size);
-            printf("  ");
-            print_unescaped(stdout, buf.bp);
-            printf("\n");
-            tidyBufClear(&buf);
         }
         if((lang_sect = sect))
             wikt_next_section(WIKTIONARY_H2, "", &lang_sect);
