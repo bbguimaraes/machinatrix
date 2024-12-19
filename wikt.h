@@ -14,6 +14,7 @@
 #define WIKTIONARY_BASE "https://en.wiktionary.org/wiki"
 #define WIKTIONARY_H2 "mw-heading2"
 #define WIKTIONARY_H3 "mw-heading3"
+#define WIKTIONARY_H4 "mw-heading4"
 
 /** Relevant elements of a page. */
 typedef struct {

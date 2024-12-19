@@ -876,7 +876,12 @@ bool cmd_wikt(const struct config *config, const char *const *argv) {
                 printf("%s\n", lang_text);
                 lang_text = NULL;
             }
-            tidyNodeGetText(tidy_doc, tidyGetNext(sect), &buf);
+            TidyNode const etym = tidyGetNext(sect);
+            if(node_has_class(etym, WIKTIONARY_H4)) {
+                printf("  <missing>\n");
+                continue;
+            }
+            tidyNodeGetText(tidy_doc, etym, &buf);
             join_lines(buf.bp, buf.bp + buf.size);
             printf("  ");
             print_unescaped(stdout, buf.bp);
