@@ -301,16 +301,21 @@ bool config_destroy(struct config *config) {
 }
 
 bool handle_cmd(const struct config *config, const char *const *argv) {
-    const char *name = *argv;
-    for(struct mtrix_cmd *cmd = COMMANDS; cmd->name; ++cmd)
-        if(!strcmp(name, cmd->name)) {
-            CMD_NAME = name;
-            return cmd->f(config, argv + 1)
-                && config_record_command(config, argv);
-        }
-    log_err("unknown command: %s\n", name);
-    usage(stderr);
-    return false;
+    const char *const name = *argv;
+    const mtrix_hash arg_hash = mtrix_hash_str(name);
+    static_assert(!offsetof(struct mtrix_cmd, name_hash));
+    struct mtrix_cmd *const cmd = bsearch(
+        &arg_hash, COMMANDS,
+        sizeof(COMMANDS) / sizeof(*COMMANDS) - 1, sizeof(*COMMANDS),
+        mtrix_hash_cmp);
+    if(!cmd) {
+        log_err("unknown command: %s\n", name);
+        usage(stderr);
+        return false;
+    }
+    CMD_NAME = name;
+    return cmd->f(config, argv + 1)
+        && config_record_command(config, argv);
 }
 
 bool handle_file(const struct config *config, FILE *f) {
@@ -333,22 +338,7 @@ bool handle_file(const struct config *config, FILE *f) {
             ret = false;
             break;
         }
-        if(!*argv)
-            continue;
-        const mtrix_hash arg_hash = mtrix_hash_str(*argv);
-        static_assert(!offsetof(struct mtrix_cmd, name_hash));
-        struct mtrix_cmd *const cmd = bsearch(
-            &arg_hash, COMMANDS,
-            sizeof(COMMANDS) / sizeof(*COMMANDS) - 1, sizeof(*COMMANDS),
-            mtrix_hash_cmp);
-        if(!cmd) {
-            log_err("unknown command: %s\n", *argv);
-            ret = false;
-            break;
-        }
-        CMD_NAME = cmd->name;
-        ret = cmd->f(config, (const char *const *)argv + 1)
-            && config_record_command(config, (const char *const *)argv);
+        const bool ret = handle_cmd(config, (const char * const*)argv);
         CMD_NAME = NULL;
         if(!ret)
             break;
