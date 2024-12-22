@@ -83,6 +83,9 @@ struct stats {
 /** Program entry point. */
 int main(int argc, const char *const *argv);
 
+/** Perform global initialization. */
+static void init(void);
+
 /** Parses command-line arguments and fills `config`. */
 static bool parse_args(int argc, char *const **argv, struct config *config);
 
@@ -179,7 +182,7 @@ struct mtrix_cmd COMMANDS[] = {
 };
 
 int main(int argc, const char *const *argv) {
-    log_set(stderr);
+    init();
     PROG_NAME = argv[0];
     struct config config = {0};
     config_init(&config);
@@ -191,6 +194,16 @@ int main(int argc, const char *const *argv) {
         config_init_numeraria(&config)
         && (*argv ? handle_cmd(&config, argv) : handle_file(&config, stdin))
         && config_destroy(&config));
+}
+
+void init(void) {
+    log_set(stderr);
+#ifndef NDEBUG
+    for(struct mtrix_cmd *p = COMMANDS; p->name; ++p)
+        assert(mtrix_hash_str(p->name) == p->name_hash);
+    for(struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
+        assert(p[-1].name_hash < p->name_hash);
+#endif
 }
 
 bool parse_args(int argc, char *const **argv, struct config *config) {
@@ -322,12 +335,6 @@ bool handle_file(const struct config *config, FILE *f) {
     bool ret = true;
     char *buffer = NULL;
     size_t len = 0;
-#ifndef NDEBUG
-    for(struct mtrix_cmd *p = COMMANDS; p->name; ++p)
-        assert(mtrix_hash_str(p->name) == p->name_hash);
-    for(struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
-        assert(p[-1].name_hash < p->name_hash);
-#endif
     for(;;) {
         if(getline(&buffer, &len, f) == -1)
             break;
