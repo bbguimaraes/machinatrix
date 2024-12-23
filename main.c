@@ -26,6 +26,9 @@
 #include "utils.h"
 #include "wikt.h"
 
+#define ARRAY_SIZE(v) (sizeof(v) / sizeof(*v))
+#define RND_LIST_ITEM(v) (rnd_list_item((v), ARRAY_SIZE(v)))
+
 enum {
     MAX_PATH = MTRIX_MAX_PATH,
     MAX_UNIX_PATH = MTRIX_MAX_UNIX_PATH,
@@ -130,6 +133,9 @@ static bool handle_file(struct config *config, FILE *f);
  * \return \c false if \c str contains more than \c max_args
  */
 static bool str_to_args(char *str, size_t max_args, char **argv);
+
+/** Chooses an item randomly from a list of strings. */
+static const char *rnd_list_item(const char **v, size_t n);
 
 /** Implements the `help` command. */
 static bool cmd_help(const struct config *config, const char *const *argv);
@@ -384,6 +390,10 @@ bool str_to_args(char *str, size_t max_args, char **argv) {
     return n < max_args || !arg;
 }
 
+const char *rnd_list_item(const char **v, size_t n) {
+    return v[(size_t)rand() % n];
+}
+
 bool config_record_command(
     const struct config *config, const char *const *argv
 ) {
@@ -570,7 +580,7 @@ bool cmd_parl(const struct config *config, const char *const *argv) {
     (void)config;
     if(argv[0])
         return log_err("command accepts no arguments\n"), false;
-    static const char *v[] = {
+    printf("%s", RND_LIST_ITEM(((const char*[]){
         "A terminological inexactitude [citation needed].\n",
         "Liar.\n-- Australia, 1997\n",
         "Dumbo.\n-- Australia, 1997\n",
@@ -682,9 +692,7 @@ bool cmd_parl(const struct config *config, const char *const *argv) {
         "Economical with the truth.\n",
         "Tired and emotional.\n-- United Kingdom\n",
         "Incapable.\n-- United Kingdom\n",
-    };
-    static const size_t n = sizeof(v) / sizeof(*v);
-    printf("%s", v[(size_t)rand() % n]);
+    })));
     return true;
 }
 
@@ -692,7 +700,7 @@ bool cmd_bard(const struct config *config, const char *const *argv) {
     (void)config;
     if(argv[0])
         return log_err("command accepts no argument\n"), false;
-    static const char *v[] = {
+    printf("%s", RND_LIST_ITEM(((const char*[]){
         "A most notable coward, an infinite and endless liar, an hourly"
         " promise breaker, the owner of no one good quality.\n"
         "-- All’s Well That Ends Well (Act 3, Scene 6)\n",
@@ -813,9 +821,7 @@ bool cmd_bard(const struct config *config, const char *const *argv) {
         "-- All’s Well That Ends Well (Act 1, Scene 1)\n",
         "Villain, I have done thy mother\n"
         "-- Titus Andronicus (Act 4, Scene 2)\n",
-    };
-    static const size_t n = sizeof(v) / sizeof(*v);
-    printf("%s", v[(size_t)rand() % n]);
+    })));
     return true;
 }
 
