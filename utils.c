@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,6 +47,26 @@ void log_errno(const char *fmt, ...) {
     va_end(argp);
     fprintf(LOG_OUT, ": %s\n", strerror(errno));
     errno = 0;
+}
+
+int64_t parse_i64(const char *s) {
+    const char *e;
+    errno = 0;
+    const uint64_t ret = strtoull(s, (char**)&e, 10);
+    if(errno) {
+        errno = 0;
+        fprintf(stderr, "strtoull: %s\n", strerror(errno));
+        return -1;
+    }
+    if(e == s) {
+        fprintf(stderr, "failed to parse i64: %s\n", s);
+        return -1;
+    }
+    if(ret > INT64_MAX) {
+        fprintf(stderr, "i64 value too large: %" PRIu64 "\n", ret);
+        return -1;
+    }
+    return (int64_t)ret;
 }
 
 char *is_prefix(const char *prefix, const char *s) {

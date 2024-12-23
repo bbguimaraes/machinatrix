@@ -3,6 +3,7 @@
  * Utility functions.
  */
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include <sys/types.h>
@@ -60,6 +61,8 @@ static const char *strchrnul(const char *s, int c);
 
 /** See libbsd's function. */
 static size_t strlcpy(char *restrict dst, const char *restrict src, size_t n);
+
+int64_t parse_i64(const char *s);
 
 /**
  * Checks if a string has a certain prefix.

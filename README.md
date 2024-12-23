@@ -15,6 +15,7 @@ Current supported commands:
 - `wikt <term> [<lang>]`: lookup etymology (Wiktionary)
 - `parl`: use unparliamentary language
 - `tr <word> [<lang>]`: translate word (Wiktionary)
+- `aoe1|aoe2 [<n>]`: Age of Empires I/II taunt
 - `stats`: print statistics
 
 ## building

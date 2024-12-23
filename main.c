@@ -3,6 +3,7 @@
  * Main robot implementation.
  */
 #include <errno.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,6 +138,9 @@ static bool str_to_args(char *str, size_t max_args, char **argv);
 /** Chooses an item randomly from a list of strings. */
 static const char *rnd_list_item(const char **v, size_t n);
 
+/** Parses \p i as an index (1-based) into \p v. */
+static const char *list_item(const char **v, size_t n, const char *i);
+
 /** Implements the `help` command. */
 static bool cmd_help(const struct config *config, const char *const *argv);
 
@@ -167,6 +171,15 @@ static bool cmd_wikt(const struct config *config, const char *const *argv);
 /** Implements the `tr` command. */
 static bool cmd_tr(const struct config *config, const char *const *argv);
 
+/** Common implementation of AoE commands. */
+static bool cmd_aoe(const char **v, size_t n, const char *const *argv);
+
+/** Implements the `aoe1` command. */
+static bool cmd_aoe1(const struct config *config, const char *const *argv);
+
+/** Implements the `aoe2` command. */
+static bool cmd_aoe2(const struct config *config, const char *const *argv);
+
 /** Implements the `stats` command. */
 static bool cmd_stats(const struct config *config, const char *const *argv);
 
@@ -186,6 +199,8 @@ static bool stats_numeraria(const struct config *config);
 const struct mtrix_cmd COMMANDS[] = {
     {0x00005979ab, "tr",    cmd_tr,    0},
     {0x017c93ee3c, "abbr",  cmd_abbr,  0},
+    {0x017c9425ab, "aoe1",  cmd_aoe1,  NEEDS_RNG},
+    {0x017c9425ac, "aoe2",  cmd_aoe2,  NEEDS_RNG},
     {0x017c94785e, "bard",  cmd_bard,  NEEDS_RNG},
     {0x017c959085, "damn",  cmd_damn,  0},
     {0x017c95bfb4, "dlpo",  cmd_dlpo,  0},
@@ -305,6 +320,7 @@ void usage(FILE *f) {
         "    wikt <term> [<lang>]:  lookup etymology (Wiktionary)\n"
         "    parl:                  use unparliamentary language\n"
         "    tr <term> [<lang>]:    lookup translation (Wiktionary)\n"
+        "    aoe1|aoe2 [<n>]        Age of Empires I/II taunt\n"
         "    stats:                 print statistics\n",
         PROG_NAME);
 }
@@ -392,6 +408,18 @@ bool str_to_args(char *str, size_t max_args, char **argv) {
 
 const char *rnd_list_item(const char **v, size_t n) {
     return v[(size_t)rand() % n];
+}
+
+const char *list_item(const char **v, size_t n, const char *i_str) {
+    int64_t i = parse_i64(i_str);
+    if(i == -1)
+        return NULL;
+    --i;
+    if(i < 0 || n <= (size_t)i) {
+        fprintf(stderr, "no item with index %" PRIi64 "\n", i + 1);
+        return NULL;
+    }
+    return v[i];
 }
 
 bool config_record_command(
@@ -982,6 +1010,166 @@ bool cmd_tr(const struct config *config, const char *const *argv) {
 cleanup:
     tidyRelease(tidy_doc);
     return ret;
+}
+
+bool cmd_aoe(const char **v, size_t n, const char *const *argv) {
+    const char *const i = *argv;
+    if(i && argv[1])
+        return log_err("command accepts at most one argument\n"), false;
+    if(!i) {
+        printf("%s", rnd_list_item(v, n));
+        return true;
+    }
+    const char *const s = list_item(v, n, i);
+    if(!s)
+        return false;
+    printf("%s", s);
+    return true;
+}
+
+bool cmd_aoe1(const struct config *config, const char *const *argv) {
+    (void)config;
+    static const char *v[] = {
+        "Yes.\n",
+        "No.\n",
+        "I need food.\n",
+        "Somebody pass the wood.\n",
+        "Gold please.\n",
+        "Gimme some stone.\n",
+        "*Whimper*\n",
+        "Your attempts are futile.\n",
+        "*Group cheer*\n",
+        "Hey, I'm in your town.\n",
+        "*Group groan*\n",
+        "Join me!\n",
+        "I don't think so.\n",
+        "Start the game already!\n",
+        "Who's the man?\n",
+        "Attack them now!\n",
+        "*Low laugh*\n",
+        "I am weak, please don't kill me!\n",
+        "*High pitched laugh*\n",
+        "I just got some... satisfaction!\n",
+        "Hey, nice town!\n",
+        "We will NOT tolerate this behavior.\n",
+        "Get out!\n",
+        "Dad gum!\n",
+        "Aw, yeah!\n",
+    };
+    return cmd_aoe(v, ARRAY_SIZE(v), argv);
+}
+
+bool cmd_aoe2(const struct config *config, const char *const *argv) {
+    (void)config;
+    static const char *v[] = {
+        "Yes.\n",
+        "No.\n",
+        "Food please.\n",
+        "Wood please.\n",
+        "Gold please.\n",
+        "Stone please.\n",
+        "Ahh!\n",
+        "All hail, king of the losers!\n",
+        "Ooh!\n",
+        "I'll beat you back to Age of Empires.\n",
+        "(Herb laugh)\n",
+        "Ah! being rushed.\n",
+        "Sure, blame it on your ISP.\n",
+        "Start the game already!\n",
+        "Don't point that thing at me!\n",
+        "Enemy sighted!\n",
+        "It is good to be the king.\n",
+        "Monk! I need a monk!\n",
+        "Long time, no siege.\n",
+        "My granny could scrap better than that.\n",
+        "Nice town, I'll take it.\n",
+        "Quit touching me!\n",
+        "Raiding party!\n",
+        "Dadgum.\n",
+        "Eh, smite me.\n",
+        "The wonder, the wonder, the... no!\n",
+        "You played two hours to die like this?\n",
+        "Yeah, well, you should see the other guy.\n",
+        "Roggan.\n",
+        "Wololo.\n",
+        "Attack an enemy now.\n",
+        "Cease creating extra villagers.\n",
+        "Create extra villagers.\n",
+        "Build a navy.\n",
+        "Stop building a navy.\n",
+        "Wait for my signal to attack.\n",
+        "Build a wonder.\n",
+        "Give me your extra resources.\n",
+        "(Ally sound)\n",
+        "(Neutral sound)\n",
+        "(Enemy sound)\n",
+        "What age are you in?\n",
+        "What is your strategy?\n",
+        "How many resources do you have?\n",
+        "Retreat now!\n",
+        "Flare the location of your army.\n",
+        "Attack in direction of the flared location.\n",
+        "I'm being attacked, please help!\n",
+        "Build a forward base at the flared location.\n",
+        "Build a fortification at the flared location.\n",
+        "Keep your army close to mine and fight with me.\n",
+        "Build a market at the flared location.\n",
+        "Rebuild your base at the flared location.\n",
+        "Build a wall between the two flared locations.\n",
+        "Build a wall around your town.\n",
+        "Train units which counter the enemy's army.\n",
+        "Stop training counter units.\n",
+        "Prepare to send me all your resources so I can vanquish our foes!\n",
+        "Stop sending me extra resources.\n",
+        "Prepare to train a large army, I will send you as many resources as I"
+            " can spare.\n",
+        "Attack player 1! (Blue)\n",
+        "Attack player 2! (Red)\n",
+        "Attack player 3! (Green)\n",
+        "Attack player 4! (Yellow)\n",
+        "Attack player 5! (Cyan)\n",
+        "Attack player 6! (Purple)\n",
+        "Attack player 7! (Gray)\n",
+        "Attack player 8! (Orange)\n",
+        "Delete the object on the flared location.\n",
+        "Delete your excess villagers.\n",
+        "Delete excess warships.\n",
+        "Focus on training infantry units.\n",
+        "Focus on training cavalry units.\n",
+        "Focus on training ranged units.\n",
+        "Focus on training warships.\n",
+        "Attack the enemy with Militia.\n",
+        "Attack the enemy with Archers.\n",
+        "Attack the enemy with Skirmishers.\n",
+        "Attack the enemy with a mix of Archers and Skirmishers.\n",
+        "Attack the enemy with Scout Cavalry.\n",
+        "Attack the enemy with Men-at-Arms.\n",
+        "Attack the enemy with Eagle Scouts.\n",
+        "Attack the enemy with Towers.\n",
+        "Attack the enemy with Crossbowmen.\n",
+        "Attack the enemy with Cavalry Archers.\n",
+        "Attack the enemy with Unique Units.\n",
+        "Attack the enemy with Knights.\n",
+        "Attack the enemy with Battle Elephants.\n",
+        "Attack the enemy with Scorpions.\n",
+        "Attack the enemy with Monks.\n",
+        "Attack the enemy with Monks and Mangonels.\n",
+        "Attack the enemy with Eagle Warriors.\n",
+        "Attack the enemy with Halberdiers and Rams.\n",
+        "Attack the enemy with Elite Eagle Warriors.\n",
+        "Attack the enemy with Arbalests.\n",
+        "Attack the enemy with Champions.\n",
+        "Attack the enemy with Galleys.\n",
+        "Attack the enemy with Fire Galleys.\n",
+        "Attack the enemy with Demolition Rafts.\n",
+        "Attack the enemy with War Galleys.\n",
+        "Attack the enemy with Fire Ships.\n",
+        "Attack the enemy with Unique Warships.\n",
+        "Use an Onager to cut down trees at the flared location.\n",
+        "Don't resign!\n",
+        "You can resign again.\n",
+    };
+    return cmd_aoe(v, ARRAY_SIZE(v), argv);
 }
 
 bool stats_increment(const struct config *config, uint8_t opt) {
