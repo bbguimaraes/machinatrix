@@ -31,6 +31,10 @@ enum {
     MAX_UNIX_PATH = MTRIX_MAX_UNIX_PATH,
     STATS_WIKT = 0,
     STATS_DLPO = 1,
+    /** Whether a command requires a random number generator. */
+    NEEDS_RNG = 1 << 0,
+    /** Whether the random number generator has been initialized. */
+    RND_INITIALIZED = 1 << 0,
 };
 
 /** `machinatrix`-specific configuration. */
@@ -39,6 +43,8 @@ struct config {
     struct mtrix_config c;
     /** Socket to communicate with `numeraria`, if enabled. */
     int numeraria_fd;
+    /** Runtime flags. */
+    uint8_t flags;
     /** Fields read from the command line. */
     struct {
         /** Optional path to the statistics file. */
@@ -70,6 +76,8 @@ struct mtrix_cmd {
     const char *name;
     /** Function that handles the command. */
     mtrix_cmd_f *f;
+    /** Configuration flags. */
+    uint8_t flags;
 };
 
 /** Accumulates lookup statistics. */
@@ -85,6 +93,9 @@ int main(int argc, const char *const *argv);
 
 /** Perform global initialization. */
 static void init(void);
+
+/** Initializes the random number generator. */
+static void rnd_init(struct config *config);
 
 /** Parses command-line arguments and fills `config`. */
 static bool parse_args(int argc, char *const **argv, struct config *config);
@@ -106,10 +117,10 @@ static bool config_record_command(
     const struct config *config, const char *const *argv);
 
 /** Handles a command passed via the command line. */
-static bool handle_cmd(const struct config *config, const char *const *argv);
+static bool handle_cmd(struct config *config, const char *const *argv);
 
 /** Handles commands read as lines from a file. */
-static bool handle_file(const struct config *config, FILE *f);
+static bool handle_file(struct config *config, FILE *f);
 
 /**
  * Breaks string into space-separated parts.
@@ -167,17 +178,17 @@ static bool stats_numeraria(const struct config *config);
  * Terminated by a `{NULL, NULL}` entry.
  */
 const struct mtrix_cmd COMMANDS[] = {
-    {0x00005979ab, "tr",    cmd_tr},
-    {0x017c93ee3c, "abbr",  cmd_abbr},
-    {0x017c94785e, "bard",  cmd_bard},
-    {0x017c959085, "damn",  cmd_damn},
-    {0x017c95bfb4, "dlpo",  cmd_dlpo},
-    {0x017c97d2ee, "help",  cmd_help},
-    {0x017c9c25b4, "parl",  cmd_parl},
-    {0x017c9c4733, "ping",  cmd_ping},
-    {0x017ca01d84, "wikt",  cmd_wikt},
-    {0x017ca037e1, "word",  cmd_word},
-    {0x3110614a14, "stats", cmd_stats},
+    {0x00005979ab, "tr",    cmd_tr,    0},
+    {0x017c93ee3c, "abbr",  cmd_abbr,  0},
+    {0x017c94785e, "bard",  cmd_bard,  NEEDS_RNG},
+    {0x017c959085, "damn",  cmd_damn,  0},
+    {0x017c95bfb4, "dlpo",  cmd_dlpo,  0},
+    {0x017c97d2ee, "help",  cmd_help,  0},
+    {0x017c9c25b4, "parl",  cmd_parl,  NEEDS_RNG},
+    {0x017c9c4733, "ping",  cmd_ping,  0},
+    {0x017ca01d84, "wikt",  cmd_wikt,  0},
+    {0x017ca037e1, "word",  cmd_word,  0},
+    {0x3110614a14, "stats", cmd_stats, 0},
     {0},
 };
 
@@ -204,6 +215,11 @@ void init(void) {
     for(const struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
         assert(p[-1].name_hash < p->name_hash);
 #endif
+}
+
+void rnd_init(struct config *config) {
+    srand((unsigned)time(NULL));
+    config->flags |= RND_INITIALIZED;
 }
 
 bool parse_args(int argc, char *const **argv, struct config *config) {
@@ -313,7 +329,7 @@ bool config_destroy(struct config *config) {
     return ret;
 }
 
-bool handle_cmd(const struct config *config, const char *const *argv) {
+bool handle_cmd(struct config *config, const char *const *argv) {
     const char *const name = *argv;
     const mtrix_hash arg_hash = mtrix_hash_str(name);
     static_assert(!offsetof(struct mtrix_cmd, name_hash));
@@ -326,12 +342,14 @@ bool handle_cmd(const struct config *config, const char *const *argv) {
         usage(stderr);
         return false;
     }
+    if((cmd->flags & NEEDS_RNG) && (!config->flags & RND_INITIALIZED))
+        rnd_init(config);
     CMD_NAME = name;
     return cmd->f(config, argv + 1)
         && config_record_command(config, argv);
 }
 
-bool handle_file(const struct config *config, FILE *f) {
+bool handle_file(struct config *config, FILE *f) {
     bool ret = true;
     char *buffer = NULL;
     size_t len = 0;
@@ -666,7 +684,6 @@ bool cmd_parl(const struct config *config, const char *const *argv) {
         "Incapable.\n-- United Kingdom\n",
     };
     static const size_t n = sizeof(v) / sizeof(*v);
-    srand((unsigned)time(NULL));
     printf("%s", v[(size_t)rand() % n]);
     return true;
 }
@@ -798,7 +815,6 @@ bool cmd_bard(const struct config *config, const char *const *argv) {
         "-- Titus Andronicus (Act 4, Scene 2)\n",
     };
     static const size_t n = sizeof(v) / sizeof(*v);
-    srand((unsigned)time(NULL));
     printf("%s", v[(size_t)rand() % n]);
     return true;
 }
