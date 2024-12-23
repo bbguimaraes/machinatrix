@@ -308,6 +308,7 @@ void usage(FILE *f) {
         "    --numeraria-socket address\n"
         "                           address to connect to numeraria\n"
         "    --numeraria-unix path  path to connect to numeraria\n"
+        "\n"
         "Commands:\n"
         "    help:                  this help\n"
         "    ping:                  pong\n"
