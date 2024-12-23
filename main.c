@@ -166,7 +166,7 @@ static bool stats_numeraria(const struct config *config);
  * Maps a command name to the function that handles it.
  * Terminated by a `{NULL, NULL}` entry.
  */
-struct mtrix_cmd COMMANDS[] = {
+const struct mtrix_cmd COMMANDS[] = {
     {0x00005979ab, "tr",    cmd_tr},
     {0x017c93ee3c, "abbr",  cmd_abbr},
     {0x017c94785e, "bard",  cmd_bard},
@@ -199,9 +199,9 @@ int main(int argc, const char *const *argv) {
 void init(void) {
     log_set(stderr);
 #ifndef NDEBUG
-    for(struct mtrix_cmd *p = COMMANDS; p->name; ++p)
+    for(const struct mtrix_cmd *p = COMMANDS; p->name; ++p)
         assert(mtrix_hash_str(p->name) == p->name_hash);
-    for(struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
+    for(const struct mtrix_cmd *p = COMMANDS + 1; p->name; ++p)
         assert(p[-1].name_hash < p->name_hash);
 #endif
 }
