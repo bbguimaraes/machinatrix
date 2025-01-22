@@ -10,11 +10,11 @@
 #define CONTENTS_ID "mw-content-text"
 
 bool wikt_parse_page(TidyDoc doc, wikt_page *p) {
-    TidyNode node = find_node_by_id(tidyGetBody(doc), CONTENTS_ID, true);
-    if(!node) {
-        log_err("contents not found\n");
-        return false;
-    }
+    TidyNode node = tidyGetBody(doc);
+    if(!(node = find_node_by_id(node, CONTENTS_ID, true)))
+        return log_err("contents not found\n"), false;
+    if(!(node = find_node_by_class(node, "mw-heading", true)))
+        return log_err("no section found\n"), false;
     p->contents = node;
     return true;
 }
